@@ -6,60 +6,63 @@ const { upsertLead, logMessage } = require('../services/leadService');
 const { MESSAGES }               = require('../config/constants');
 const { sendText }               = require('../services/whatsapp');
 
-// ── Twilio sends form-encoded POST, not JSON ──────────────
-// req.body looks like:
-// { From: 'whatsapp:+234...', Body: 'Hello', MessageSid: 'SMxxx' }
-
 const handleIncoming = async (entry) => {
+  const message = entry.messages[0];
+  const contact = entry.contacts?.[0];
+  const from    = message.from;
+  const msgId   = message.id;
+  const msgType = message.type;
+
+  // 1. Deduplicate
+  const alreadySeen = await isMessageSeen(msgId);
+  if (alreadySeen) {
+    console.log(`[HANDLER] Duplicate ignored: ${msgId}`);
+    return;
+  }
+
+  // 2. Mark as read
+  await markRead(msgId);
+
+  // 3. Rate limit
+  const limited = await isRateLimited(from);
+  if (limited) {
+    await sendText(from, MESSAGES.rateLimit);
+    return;
+  }
+
+  // 4. Upsert lead
+  await upsertLead(from, { name: contact?.profile?.name });
+
+  // 5. Log message
+  const content = message.text?.body
+               || message.interactive?.button_reply?.id
+               || msgType;
+  await logMessage(from, 'inbound', msgType, content, msgId);
+
+  // 6. Get state
+  const state = await getState(from);
+
+  console.log(`[HANDLER] from=${from} type=${msgType} stage=${state.stage}`);
+
+  // 7. Route
   try {
-    // entry IS the parsed Twilio body
-    const from    = entry.From?.replace('whatsapp:', '').trim();
-    const msgId   = entry.MessageSid;
-    const msgType = entry.NumMedia > 0 ? 'media' : 'text';
-    const body    = entry.Body?.trim() || '';
-    const name    = entry.ProfileName || '';
+    if (msgType === 'interactive') {
+      const btnId = message.interactive?.button_reply?.id
+                 || message.interactive?.list_reply?.id;
+      const { handleButton } = require('./buttonHandler');
+      await handleButton(from, btnId, state, message);
 
-    if (!from || !msgId) {
-      console.warn('[HANDLER] Missing from or msgId — skipping');
-      return;
-    }
-
-    // 1. Deduplicate
-    const alreadySeen = await isMessageSeen(msgId);
-    if (alreadySeen) {
-      console.log(`[HANDLER] Duplicate message ignored: ${msgId}`);
-      return;
-    }
-
-    // 2. Rate limit
-    const limited = await isRateLimited(from);
-    if (limited) {
-      await sendText(from, MESSAGES.rateLimit);
-      return;
-    }
-
-    // 3. Upsert lead
-    await upsertLead(from, { name });
-
-    // 4. Log message
-    await logMessage(from, 'inbound', msgType, body, msgId);
-
-    // 5. Get state
-    const state = await getState(from);
-
-    // 6. Route
-    if (msgType === 'media') {
-      const { handleMedia } = require('./mediaHandler');
-      await handleMedia(from, msgType, entry, state);
-    } else {
+    } else if (msgType === 'text') {
       const { handleText } = require('./textHandler');
-      await handleText(from, body, state, entry);
-    }
+      await handleText(from, message.text.body.trim(), state, message);
 
+    } else {
+      const { handleMedia } = require('./mediaHandler');
+      await handleMedia(from, msgType, message, state);
+    }
   } catch (err) {
-    console.error('[HANDLER] Error:', err.message);
-    const from = entry?.From?.replace('whatsapp:', '').trim();
-    if (from) await sendText(from, MESSAGES.fallback).catch(() => {});
+    console.error('[HANDLER] Flow error:', err.message);
+    await sendText(from, MESSAGES.fallback);
   }
 };
 

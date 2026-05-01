@@ -1,110 +1,92 @@
-const twilio                    = require('twilio');
-const { setState, getState }    = require('../utils/stateManager');
+const axios = require('axios');
 
-const getClient = () => twilio(
-  process.env.WHATSAPP_PHONE_NUMBER_ID,
-  process.env.WHATSAPP_TOKEN
-);
+const API_URL = () =>
+  `https://graph.facebook.com/v19.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`;
 
-const FROM = () => `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`;
-const TO   = (phone) => {
-  const clean = phone.replace('whatsapp:', '').trim();
-  return `whatsapp:${clean}`;
-};
+const authHeaders = () => ({
+  Authorization:  `Bearer ${process.env.WHATSAPP_TOKEN}`,
+  'Content-Type': 'application/json',
+});
 
-const send = async (to, body, options = {}) => {
+const send = async (payload) => {
   try {
-    const client = getClient();
-    const msg    = await client.messages.create({
-      from: FROM(),
-      to:   TO(to),
-      body,
-      ...options,
+    const res = await axios.post(API_URL(), payload, {
+      headers: authHeaders(),
+      timeout: 10000,
     });
-    console.log(`[WHATSAPP] Sent to ${to} — SID: ${msg.sid}`);
-    return msg;
+    return res.data;
   } catch (err) {
-    // Twilio daily limit hit
-    if (err.message?.includes('daily messages limit')) {
-      console.error('[WHATSAPP] ⚠️  DAILY LIMIT REACHED — resets at midnight UTC');
-      console.error('[WHATSAPP] Pause testing and resume tomorrow or upgrade Twilio account');
-      return null; // Fail silently — don't crash the server
-    }
-    console.error('[WHATSAPP] Send error:', err.message);
+    console.error('[WHATSAPP] Send error:', err.response?.data || err.message);
     throw err;
   }
 };
 
-const sendText = (to, text) => send(to, text);
+const sendText = (to, text) => send({
+  messaging_product: 'whatsapp',
+  recipient_type:    'individual',
+  to,
+  type: 'text',
+  text: { body: text, preview_url: false },
+});
 
-// Sends numbered menu AND saves items to state for numeric reply resolution
-const sendButtons = async (to, bodyText, buttons, headerText = null) => {
-  if (!buttons?.length) return;
-
-  const header   = headerText ? `*${headerText}*\n\n` : '';
-  const btnList  = buttons.map((b, i) => `${i + 1}. ${b.title}`).join('\n');
-  const fullText = `${header}${bodyText}\n\n${btnList}\n\n_Reply with a number to select_`;
-
-  // Save menu context to state so numeric replies resolve
-  try {
-    const state = await getState(to);
-    await setState(to, state.stage, {
-      ...state.data,
-      lastMenu: buttons.map((b, i) => ({ number: i + 1, id: b.id, title: b.title })),
-    });
-  } catch (e) {
-    console.error('[WHATSAPP] Could not save menu state:', e.message);
+const sendButtons = (to, bodyText, buttons, headerText = null) => {
+  if (!buttons?.length || buttons.length > 3) {
+    throw new Error('sendButtons requires 1-3 buttons');
   }
-
-  return send(to, fullText);
-};
-
-const sendList = async (to, bodyText, buttonLabel, sections) => {
-  let text    = `${bodyText}\n\n`;
-  let counter = 1;
-  const allItems = [];
-
-  sections.forEach((section) => {
-    if (section.title) text += `*${section.title}*\n`;
-    section.rows.forEach((row) => {
-      text += `${counter}. ${row.title}`;
-      if (row.description) text += `\n   _${row.description}_`;
-      text += '\n';
-      allItems.push({ number: counter, id: row.id, title: row.title });
-      counter++;
-    });
-    text += '\n';
+  return send({
+    messaging_product: 'whatsapp',
+    recipient_type:    'individual',
+    to,
+    type: 'interactive',
+    interactive: {
+      type: 'button',
+      ...(headerText && { header: { type: 'text', text: headerText } }),
+      body:   { text: bodyText },
+      action: {
+        buttons: buttons.map(b => ({
+          type:  'reply',
+          reply: { id: b.id, title: b.title.slice(0, 20) },
+        })),
+      },
+    },
   });
-
-  text += `_Reply with a number to select_`;
-
-  // Save menu context to state
-  try {
-    const state = await getState(to);
-    await setState(to, state.stage, {
-      ...state.data,
-      lastMenu: allItems,
-    });
-  } catch (e) {
-    console.error('[WHATSAPP] Could not save menu state:', e.message);
-  }
-
-  return send(to, text);
 };
 
-const sendDocument = (to, url, filename, caption = '') =>
-  send(to, caption || filename, { mediaUrl: [url] });
+const sendList = (to, bodyText, buttonLabel, sections) => send({
+  messaging_product: 'whatsapp',
+  recipient_type:    'individual',
+  to,
+  type: 'interactive',
+  interactive: {
+    type:   'list',
+    body:   { text: bodyText },
+    action: { button: buttonLabel.slice(0, 20), sections },
+  },
+});
 
-const sendImage = (to, url, caption = '') =>
-  send(to, caption, { mediaUrl: [url] });
+const sendDocument = (to, url, filename, caption = '') => send({
+  messaging_product: 'whatsapp',
+  recipient_type:    'individual',
+  to,
+  type:     'document',
+  document: { link: url, filename, caption },
+});
 
-const markRead = async () => {}; // Not supported in Twilio
+const sendImage = (to, url, caption = '') => send({
+  messaging_product: 'whatsapp',
+  recipient_type:    'individual',
+  to,
+  type:  'image',
+  image: { link: url, caption },
+});
+
+const markRead = (messageId) => send({
+  messaging_product: 'whatsapp',
+  status:            'read',
+  message_id:        messageId,
+}).catch(() => {});
 
 module.exports = {
-  sendText,
-  sendButtons,
-  sendList,
-  sendDocument,
-  sendImage,
-  markRead,
+  sendText, sendButtons, sendList,
+  sendDocument, sendImage, markRead,
 };
