@@ -1,0 +1,98 @@
+Folder PATH listing
+Volume serial number is EE63-CA0F
+C:.
+|   .env
+|   .env.example
+|   .gitignore
+|   package.json
+|   README.md
+|   
++---docs
+|       file-tree.txt
+|       
++---scripts
+|       migrateDb.js
+|       seedTestData.js
+|       testWebhook.js
+|       
++---src
+|   |   index.js
+|   |   
+|   +---admin
+|   |       dashboard.html
+|   |       dashboardAuth.js
+|   |       dashboardRoutes.js
+|   |       
+|   +---config
+|   |       constants.js
+|   |       database.js
+|   |       logger.js
+|   |       redis.js
+|   |       
+|   +---data
+|   |   |   batches.js
+|   |   |   countries.js
+|   |   |   loanPackages.js
+|   |   |   pricingGuide.js
+|   |   |   services.js
+|   |   |   testimonials.js
+|   |   |   
+|   |   \---media
+|   +---flows
+|   |       consultation.js
+|   |       escalation.js
+|   |       greeting.js
+|   |       loanScholarship.js
+|   |       mainMenu.js
+|   |       payment.js
+|   |       pilgrimage.js
+|   |       proofOfFunds.js
+|   |       studyAbroad.js
+|   |       testPrep.js
+|   |       travelServices.js
+|   |       visaProcessing.js
+|   |       
+|   +---handlers
+|   |       buttonHandler.js
+|   |       mediaHandler.js
+|   |       messageHandler.js
+|   |       textHandler.js
+|   |       
+|   +---middleware
+|   |       authMiddleware.js
+|   |       errorHandler.js
+|   |       rateLimiter.js
+|   |       webhookVerify.js
+|   |       
+|   +---services
+|   |       ai.js
+|   |       broadcast.js
+|   |       leadService.js
+|   |       notificationService.js
+|   |       paystack.js
+|   |       whatsapp.js
+|   |       
+|   \---utils
+|           helpers.js
+|           messageTemplates.js
+|           scheduler.js
+|           stateManager.js
+|           validators.js
+|           
+\---tests
+    +---e2e
+    |       loanFlow.test.js
+    |       studyAbroadFlow.test.js
+    |       testPrepFlow.test.js
+    |       visaFlow.test.js
+    |       
+    +---integration
+    |       database.test.js
+    |       payment.test.js
+    |       webhook.test.js
+    |       
+    \---unit
+            helpers.test.js
+            stateManager.test.js
+            validators.test.js
+            

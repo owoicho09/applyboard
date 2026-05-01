@@ -1,0 +1,71 @@
+{
+  "name": "applyboard-bot",
+  "version": "1.0.0",
+  "description": "WhatsApp Bot for ApplyBoard Africa — Education & Travel Consultancy",
+  "main": "src/index.js",
+  "type": "commonjs",
+  "author": "ApplyBoard Africa",
+  "license": "ISC",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "jest --runInBand --detectOpenHandles --forceExit",
+    "test:unit": "jest tests/unit --runInBand --detectOpenHandles --forceExit",
+    "test:integration": "jest tests/integration --runInBand --detectOpenHandles --forceExit",
+    "test:e2e": "jest tests/e2e --runInBand --detectOpenHandles --forceExit",
+    "seed": "node scripts/seedTestData.js",
+    "migrate": "node scripts/migrateDb.js"
+  },
+  "keywords": [
+    "whatsapp",
+    "bot",
+    "education",
+    "visa",
+    "nigeria"
+  ],
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.91.1",
+    "@supabase/supabase-js": "^2.105.1",
+    "axios": "^1.15.2",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.4.1",
+    "helmet": "^8.1.0",
+    "ioredis": "^5.10.1",
+    "jsonwebtoken": "^9.0.3",
+    "morgan": "^1.10.1",
+    "node-cron": "^4.2.1",
+    "paystack-api": "^2.0.6",
+    "twilio": "^6.0.0",
+    "uuid": "^14.0.0"
+  },
+  "devDependencies": {
+    "jest": "^30.3.0",
+    "nodemon": "^3.1.14",
+    "supertest": "^7.2.2"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/tests/**/*.test.js"
+    ],
+    "testTimeout": 30000,
+    "verbose": true
+  },
+  "nodemonConfig": {
+    "watch": [
+      "src"
+    ],
+    "ext": "js,json",
+    "ignore": [
+      "tests/",
+      "node_modules/"
+    ],
+    "delay": 500
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
