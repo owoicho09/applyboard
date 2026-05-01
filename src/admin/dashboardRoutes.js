@@ -7,7 +7,7 @@ const { sendBroadcast } = require('../services/broadcast');
 const { sendText }     = require('../services/whatsapp');
 
 // ── Serve dashboard HTML (basic auth on the page itself) ──
-router.get('/', basicAuth, (req, res) => {
+router.get('/', (req, res) => {
   // Generate a session token and pass it to the HTML
   const token = generateToken(process.env.ADMIN_USERNAME);
   res.sendFile(path.join(__dirname, 'dashboard.html'));
