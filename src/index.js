@@ -4,7 +4,7 @@ require('dotenv').config();
 const REQUIRED_ENV = [
   'WHATSAPP_TOKEN',
   'WHATSAPP_PHONE_NUMBER_ID',
-  'TWILIO_WHATSAPP_NUMBER',
+  'WEBHOOK_VERIFY_TOKEN',
   'SUPABASE_URL',
   'SUPABASE_SERVICE_KEY',
   'REDIS_URL',
@@ -43,14 +43,14 @@ app.use('/admin', (req, res, next) => {
 });
 
 // ── Security middleware ───────────────────────────────────
-app.use(helmet({
-  contentSecurityPolicy: false,
-}));
+app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors());
 app.use(logger);
 app.use(cookieParser());
 
 // ── Body parsing ──────────────────────────────────────────
+// Meta requires raw body for webhook signature verification
+app.use('/webhook',         express.raw({ type: 'application/json' }));
 app.use('/payment/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -62,7 +62,7 @@ app.get('/health', (req, res) => {
     service: 'ApplyBoard Africa Bot',
     ts:      new Date().toISOString(),
     env:     process.env.NODE_ENV || 'development',
-    gateway: 'Twilio WhatsApp',
+    gateway: 'Meta WhatsApp Cloud API',
   });
 });
 
@@ -70,18 +70,26 @@ app.get('/health', (req, res) => {
 const { verifyWebhook }  = require('./middleware/webhookVerify');
 const { handleIncoming } = require('./handlers/messageHandler');
 
+// Meta sends GET to verify webhook — must respond with challenge
 app.get('/webhook', verifyWebhook);
 
+// Meta sends POST for every incoming message
 app.post('/webhook', async (req, res) => {
-  res.set('Content-Type', 'text/xml');
-  res.status(200).send('<Response></Response>');
+  // Always respond 200 immediately — Meta drops if no response within 20s
+  res.sendStatus(200);
 
   try {
-    if (!req.body?.From) return;
-    await handleIncoming(req.body);
+    const body = JSON.parse(req.body);
+
+    // Ignore anything that isn't a WhatsApp message event
+    if (body.object !== 'whatsapp_business_account') return;
+
+    const entry = body?.entry?.[0]?.changes?.[0]?.value;
+    if (!entry?.messages?.[0]) return; // Status updates — ignore
+
+    await handleIncoming(entry);
   } catch (err) {
     console.error('[WEBHOOK] Processing error:', err.message);
-    console.error('[WEBHOOK] Stack:', err.stack);
   }
 });
 
@@ -123,7 +131,7 @@ app.listen(PORT, () => {
   console.log('╔══════════════════════════════════════════╗');
   console.log('║     ApplyBoard Africa Bot — ONLINE       ║');
   console.log(`║     Port: ${PORT}   ENV: ${(process.env.NODE_ENV || 'development').padEnd(14)}║`);
-  console.log('║     Gateway: Twilio WhatsApp Sandbox     ║');
+  console.log('║     Gateway: Meta WhatsApp Cloud API     ║');
   console.log('║     /health  /webhook  /admin            ║');
   console.log('╚══════════════════════════════════════════╝');
   console.log('');
