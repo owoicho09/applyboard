@@ -93,6 +93,28 @@ app.post('/webhook', async (req, res) => {
   }
 });
 
+// ── Telegram webhook ──────────────────────────────────────
+const { handleTelegram } = require('./handlers/telegramHandler');
+
+app.post('/telegram/webhook', async (req, res) => {
+  res.sendStatus(200); // Always respond immediately
+
+  try {
+    if (!req.body) return;
+    await handleTelegram(req.body);
+  } catch (err) {
+    console.error('[TELEGRAM WEBHOOK] Error:', err.message);
+  }
+});
+
+// ── Register Telegram webhook on startup ──────────────────
+if (process.env.TELEGRAM_BOT_TOKEN && process.env.BASE_URL) {
+  const { registerWebhook } = require('./services/telegram');
+  registerWebhook(process.env.BASE_URL)
+    .then(() => console.log('[TELEGRAM] Webhook registered successfully'))
+    .catch((err) => console.error('[TELEGRAM] Webhook registration failed:', err.message));
+}
+
 // ── Payment webhook (Paystack) ────────────────────────────
 app.post('/payment/webhook', async (req, res) => {
   try {

@@ -1,4 +1,4 @@
-const { sendButtons }          = require('../services/whatsapp');
+const { sendButtons }          = require('../services/messenger');
 const { setState }             = require('../utils/stateManager');
 const { getRandomTestimonial } = require('../data/testimonials');
 const { MESSAGES, STAGES, BTN } = require('../config/constants');
@@ -21,7 +21,7 @@ const sendGreeting = async (from, name = '') => {
 
   // Send a testimonial 30% of the time to build social proof
   if (Math.random() < 0.3) {
-    const { sendText } = require('../services/whatsapp');
+    const { sendText } = require('../services/messenger');
     await sendText(from, getRandomTestimonial());
   }
 };

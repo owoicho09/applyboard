@@ -1,4 +1,4 @@
-const { sendText, sendButtons }  = require('../services/whatsapp');
+const { sendText, sendButtons }  = require('../services/messenger');
 const { getState, setState }     = require('../utils/stateManager');
 const { STAGES, BTN, MESSAGES }  = require('../config/constants');
 const { sanitizeText }           = require('../utils/validators');

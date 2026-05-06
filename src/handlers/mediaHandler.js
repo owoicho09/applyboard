@@ -1,4 +1,4 @@
-const { sendText } = require('../services/whatsapp');
+const { sendText } = require('../services/messenger');
 
 const handleMedia = async (from, type, message, state) => {
   console.log(`[MEDIA] from=${from} type=${type}`);
