@@ -539,8 +539,8 @@ textarea.form-control { resize: vertical; min-height: 80px; }
     </div>
     <div class="login-error" id="login-error"></div>
     <div class="form-group">
-      <label class="form-label">Username</label>
-      <input class="form-control" id="login-user" type="text" placeholder="Enter username" autocomplete="username">
+<label class="form-label">Email or Username</label>
+<input class="form-control" id="login-user" type="text" placeholder="email@applyboardafrica.com">
     </div>
     <div class="form-group">
       <label class="form-label">Password</label>
@@ -1035,14 +1035,14 @@ const ic = {
 // AUTH
 // ════════════════════════════════════════════════════════
 const doLogin = async () => {
-  const user = document.getElementById('login-user').value.trim();
-  const pass = document.getElementById('login-pass').value;
-  const err  = document.getElementById('login-error');
-  const btn  = document.getElementById('login-btn');
+  const emailOrUser = document.getElementById('login-user').value.trim();
+  const pass        = document.getElementById('login-pass').value;
+  const err         = document.getElementById('login-error');
+  const btn         = document.getElementById('login-btn');
 
-  if (!user || !pass) {
+  if (!emailOrUser || !pass) {
     err.style.display = 'block';
-    err.textContent   = 'Please enter username and password.';
+    err.textContent   = 'Please enter your email and password.';
     return;
   }
 
@@ -1051,24 +1051,42 @@ const doLogin = async () => {
   err.style.display = 'none';
 
   try {
-    const res = await fetch('/admin/auth/token', {
-  method:  'POST',
-  headers: {
-    'Authorization': 'Basic ' + btoa(unescape(encodeURIComponent(user + ':' + pass))),
-  },
-});
-    const data = await res.json();
+    let res;
 
+    if (emailOrUser.includes('@')) {
+      // Team member — email login
+      res = await fetch('/admin/auth/token', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ email: emailOrUser, password: pass }),
+      });
+    } else {
+      // Super admin — basic auth
+      res = await fetch('/admin/auth/token', {
+        method:  'POST',
+        headers: {
+          'Authorization': 'Basic ' + btoa(
+            unescape(encodeURIComponent(emailOrUser + ':' + pass))
+          ),
+        },
+      });
+    }
+
+    const data = await res.json();
     if (!res.ok || !data.token) throw new Error(data.error || 'Invalid credentials');
 
     TOKEN = data.token;
     sessionStorage.setItem('adminToken', TOKEN);
-    sessionStorage.setItem('adminUser', user);
+    sessionStorage.setItem('adminUser',  data.user?.name       || emailOrUser);
+    sessionStorage.setItem('adminRole',  data.user?.role       || 'agent');
+    sessionStorage.setItem('adminDept',  data.user?.department || '');
 
-    document.getElementById('login-page').style.display = 'none';
-    document.getElementById('app').style.display = 'flex';
-    document.getElementById('user-name-display').textContent = user;
-    document.getElementById('user-avatar').textContent = user[0].toUpperCase();
+    document.getElementById('login-page').style.display  = 'none';
+    document.getElementById('app').style.display         = 'flex';
+    document.getElementById('user-name-display').textContent =
+      data.user?.name || emailOrUser;
+    document.getElementById('user-avatar').textContent =
+      (data.user?.name || emailOrUser)[0].toUpperCase();
 
     initApp();
   } catch (e) {
@@ -1079,6 +1097,7 @@ const doLogin = async () => {
     btn.textContent = 'Sign In';
   }
 };
+
 
 const doLogout = () => {
   sessionStorage.clear();
