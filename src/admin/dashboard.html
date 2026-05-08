@@ -5,527 +5,268 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ApplyBoard Africa — CRM</title>
 <style>
-/* ── RESET ── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { font-size: 14px; }
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
-  background: #F0F2F5; color: #1a1a2e; line-height: 1.5;
-}
-button { font-family: inherit; cursor: pointer; }
-input, select, textarea { font-family: inherit; }
-a { text-decoration: none; }
-
-/* ── TOKENS ── */
-:root {
-  --primary:      #166534;
-  --primary-hover:#14532d;
-  --primary-light:#dcfce7;
-  --primary-mid:  #86efac;
-  --surface:      #ffffff;
-  --surface-2:    #F8FAFC;
-  --border:       #E2E8F0;
-  --border-hover: #CBD5E1;
-  --text:         #0F172A;
-  --text-2:       #475569;
-  --text-3:       #94A3B8;
-  --danger:       #DC2626;
-  --danger-light: #FEF2F2;
-  --warning:      #D97706;
-  --warning-light:#FFFBEB;
-  --info:         #2563EB;
-  --info-light:   #EFF6FF;
-  --success:      #16A34A;
-  --success-light:#F0FDF4;
-  --radius:       8px;
-  --radius-lg:    12px;
-  --shadow-sm:    0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-  --shadow:       0 4px 6px rgba(0,0,0,0.05), 0 2px 4px rgba(0,0,0,0.04);
-  --shadow-lg:    0 10px 25px rgba(0,0,0,0.1), 0 4px 10px rgba(0,0,0,0.06);
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:14px}
+body{font-family:-apple-system,BlinkMacSystemFont,'Inter','Segoe UI',sans-serif;background:#F0F2F5;color:#1a1a2e;line-height:1.5}
+button{font-family:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit}
+a{text-decoration:none}
+:root{
+  --primary:#166534;--primary-hover:#14532d;--primary-light:#dcfce7;
+  --surface:#ffffff;--surface-2:#F8FAFC;
+  --border:#E2E8F0;--border-hover:#CBD5E1;
+  --text:#0F172A;--text-2:#475569;--text-3:#94A3B8;
+  --danger:#DC2626;--danger-light:#FEF2F2;
+  --warning:#D97706;--warning-light:#FFFBEB;
+  --info:#2563EB;--info-light:#EFF6FF;
+  --success:#16A34A;--success-light:#F0FDF4;
+  --radius:8px;--radius-lg:12px;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  --shadow:0 4px 6px rgba(0,0,0,.05),0 2px 4px rgba(0,0,0,.04);
+  --shadow-lg:0 10px 25px rgba(0,0,0,.1),0 4px 10px rgba(0,0,0,.06)
 }
 
-/* ── LOGIN PAGE ── */
-#login-page {
-  min-height: 100vh; display: flex;
-  align-items: center; justify-content: center;
-  background: linear-gradient(135deg, #064e3b 0%, #166534 50%, #15803d 100%);
-}
-.login-card {
-  background: var(--surface); border-radius: var(--radius-lg);
-  padding: 40px; width: 100%; max-width: 400px;
-  box-shadow: var(--shadow-lg);
-}
-.login-logo {
-  text-align: center; margin-bottom: 28px;
-}
-.login-logo-icon {
-  width: 52px; height: 52px; border-radius: var(--radius);
-  background: var(--primary); display: inline-flex;
-  align-items: center; justify-content: center; margin-bottom: 12px;
-}
-.login-logo h1 { font-size: 18px; font-weight: 700; color: var(--text); }
-.login-logo p  { font-size: 12px; color: var(--text-2); margin-top: 2px; }
-.login-error {
-  background: var(--danger-light); color: var(--danger);
-  padding: 10px 14px; border-radius: var(--radius);
-  font-size: 12px; margin-bottom: 16px; display: none;
-}
+/* LOGIN */
+#login-page{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#064e3b 0%,#166534 50%,#15803d 100%)}
+.login-card{background:var(--surface);border-radius:var(--radius-lg);padding:40px;width:100%;max-width:400px;box-shadow:var(--shadow-lg)}
+.login-logo{text-align:center;margin-bottom:28px}
+.login-logo-icon{width:52px;height:52px;border-radius:var(--radius);background:var(--primary);display:inline-flex;align-items:center;justify-content:center;margin-bottom:12px}
+.login-logo h1{font-size:18px;font-weight:700;color:var(--text)}
+.login-logo p{font-size:12px;color:var(--text-2);margin-top:2px}
+.login-error{background:var(--danger-light);color:var(--danger);padding:10px 14px;border-radius:var(--radius);font-size:12px;margin-bottom:16px;display:none}
 
-/* ── APP LAYOUT ── */
-#app { display: none; height: 100vh; overflow: hidden; }
-.layout { display: flex; height: 100%; }
+/* APP */
+#app{display:none;height:100vh;overflow:hidden}
+.layout{display:flex;height:100%}
 
-/* ── SIDEBAR ── */
-.sidebar {
-  width: 240px; background: var(--surface);
-  border-right: 1px solid var(--border);
-  display: flex; flex-direction: column;
-  flex-shrink: 0; transition: width 0.2s;
-  overflow: hidden;
-}
-.sidebar-header {
-  padding: 18px 16px 14px;
-  border-bottom: 1px solid var(--border);
-}
-.brand { display: flex; align-items: center; gap: 10px; }
-.brand-icon {
-  width: 34px; height: 34px; border-radius: 8px;
-  background: var(--primary); display: flex;
-  align-items: center; justify-content: center; flex-shrink: 0;
-}
-.brand-icon svg { width: 18px; height: 18px; fill: none; stroke: #fff; stroke-width: 2; }
-.brand-text { overflow: hidden; }
-.brand-name { font-size: 13px; font-weight: 700; color: var(--text); white-space: nowrap; }
-.brand-sub  { font-size: 11px; color: var(--text-3); white-space: nowrap; }
+/* SIDEBAR */
+.sidebar{width:240px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
+.sidebar-header{padding:18px 16px 14px;border-bottom:1px solid var(--border)}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-icon{width:34px;height:34px;border-radius:8px;background:var(--primary);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.brand-icon svg{width:18px;height:18px;fill:none;stroke:#fff;stroke-width:2}
+.brand-name{font-size:13px;font-weight:700;color:var(--text);white-space:nowrap}
+.brand-sub{font-size:11px;color:var(--text-3);white-space:nowrap}
+.nav{flex:1;padding:8px;overflow-y:auto}
+.nav-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:var(--text-3);padding:8px 8px 4px}
+.nav-btn{width:100%;display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--radius);background:none;border:none;color:var(--text-2);font-size:13px;font-weight:500;transition:all .15s;white-space:nowrap;text-align:left}
+.nav-btn:hover{background:var(--surface-2);color:var(--text)}
+.nav-btn.active{background:var(--primary-light);color:var(--primary)}
+.nav-btn svg{width:16px;height:16px;flex-shrink:0;stroke:currentColor;fill:none;stroke-width:2}
+.nav-badge{margin-left:auto;background:var(--danger);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px}
+.sidebar-footer{padding:12px 16px;border-top:1px solid var(--border)}
+.user-row{display:flex;align-items:center;gap:8px}
+.user-avatar{width:30px;height:30px;border-radius:50%;background:var(--primary-light);color:var(--primary);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.user-info{flex:1;overflow:hidden}
+.user-name{font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-role{font-size:10px;color:var(--text-3)}
+.user-dept{font-size:10px;color:var(--primary);font-weight:600}
+.btn-logout{background:none;border:none;color:var(--text-3);padding:4px;border-radius:4px;transition:color .15s}
+.btn-logout:hover{color:var(--danger)}
+.btn-logout svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2}
 
-.nav { flex: 1; padding: 8px; overflow-y: auto; }
-.nav-section { margin-bottom: 4px; }
-.nav-label {
-  font-size: 10px; font-weight: 600; text-transform: uppercase;
-  letter-spacing: 0.8px; color: var(--text-3);
-  padding: 8px 8px 4px;
-}
-.nav-btn {
-  width: 100%; display: flex; align-items: center; gap: 10px;
-  padding: 8px 10px; border-radius: var(--radius);
-  background: none; border: none; color: var(--text-2);
-  font-size: 13px; font-weight: 500; transition: all 0.15s;
-  white-space: nowrap; text-align: left;
-}
-.nav-btn:hover { background: var(--surface-2); color: var(--text); }
-.nav-btn.active {
-  background: var(--primary-light); color: var(--primary);
-}
-.nav-btn svg { width: 16px; height: 16px; flex-shrink: 0; stroke: currentColor; fill: none; stroke-width: 2; }
-.nav-badge {
-  margin-left: auto; background: var(--danger);
-  color: #fff; font-size: 10px; font-weight: 700;
-  padding: 1px 6px; border-radius: 10px;
-}
+/* MAIN */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;height:56px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.topbar-left{display:flex;align-items:center;gap:10px}
+.menu-toggle{display:none;background:none;border:none;color:var(--text-2);padding:6px}
+.menu-toggle svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2}
+.page-title{font-size:15px;font-weight:600;color:var(--text)}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.clock{font-size:11px;color:var(--text-3)}
+.btn-refresh{display:flex;align-items:center;gap:6px;padding:6px 12px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-2);font-size:12px;font-weight:500;transition:all .15s}
+.btn-refresh:hover{border-color:var(--primary);color:var(--primary)}
+.btn-refresh svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2}
+.content-area{flex:1;overflow-y:auto;padding:20px}
 
-.sidebar-footer {
-  padding: 12px 16px;
-  border-top: 1px solid var(--border);
-}
-.user-row {
-  display: flex; align-items: center; gap: 8px;
-}
-.user-avatar {
-  width: 30px; height: 30px; border-radius: 50%;
-  background: var(--primary-light); color: var(--primary);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 11px; font-weight: 700; flex-shrink: 0;
-}
-.user-info { flex: 1; overflow: hidden; }
-.user-name { font-size: 12px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.user-role { font-size: 10px; color: var(--text-3); }
-.btn-logout {
-  background: none; border: none; color: var(--text-3);
-  padding: 4px; border-radius: 4px; transition: color 0.15s;
-}
-.btn-logout:hover { color: var(--danger); }
-.btn-logout svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; }
+/* SECTIONS */
+.section{display:none}
+.section.active{display:block}
 
-/* ── MAIN ── */
-.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+/* STATS */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:20px}
+.stat-card{background:var(--surface);border-radius:var(--radius-lg);padding:16px 18px;box-shadow:var(--shadow-sm);border:1px solid var(--border);display:flex;align-items:flex-start;gap:12px;transition:transform .2s}
+.stat-card:hover{transform:translateY(-1px)}
+.stat-icon{width:38px;height:38px;border-radius:var(--radius);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.stat-icon svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2}
+.stat-icon.green{background:var(--success-light);color:var(--success)}
+.stat-icon.blue{background:var(--info-light);color:var(--info)}
+.stat-icon.orange{background:var(--warning-light);color:var(--warning)}
+.stat-icon.red{background:var(--danger-light);color:var(--danger)}
+.stat-icon.purple{background:#F5F3FF;color:#7C3AED}
+.stat-body{flex:1;min-width:0}
+.stat-label{font-size:11px;color:var(--text-3);font-weight:500;text-transform:uppercase;letter-spacing:.4px}
+.stat-value{font-size:24px;font-weight:700;color:var(--text);line-height:1.2;margin:2px 0}
+.stat-sub{font-size:11px;color:var(--text-3)}
 
-/* ── TOPBAR ── */
-.topbar {
-  background: var(--surface); border-bottom: 1px solid var(--border);
-  padding: 0 20px; height: 56px;
-  display: flex; align-items: center; justify-content: space-between;
-  flex-shrink: 0;
-}
-.topbar-left { display: flex; align-items: center; gap: 10px; }
-.menu-toggle {
-  display: none; background: none; border: none;
-  color: var(--text-2); padding: 6px;
-}
-.menu-toggle svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; }
-.page-title { font-size: 15px; font-weight: 600; color: var(--text); }
-.topbar-right { display: flex; align-items: center; gap: 8px; }
-.clock { font-size: 11px; color: var(--text-3); }
-.btn-refresh {
-  display: flex; align-items: center; gap: 6px;
-  padding: 6px 12px; background: var(--surface-2);
-  border: 1px solid var(--border); border-radius: var(--radius);
-  color: var(--text-2); font-size: 12px; font-weight: 500;
-  transition: all 0.15s;
-}
-.btn-refresh:hover { border-color: var(--primary); color: var(--primary); }
-.btn-refresh svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; }
+/* CARDS */
+.card{background:var(--surface);border-radius:var(--radius-lg);border:1px solid var(--border);box-shadow:var(--shadow-sm);margin-bottom:18px;overflow:hidden}
+.card-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.card-title{font-size:13px;font-weight:600;color:var(--text)}
 
-/* ── CONTENT ── */
-.content-area { flex: 1; overflow-y: auto; padding: 20px; }
+/* TOOLBAR */
+.toolbar{padding:10px 16px;background:var(--surface-2);border-bottom:1px solid var(--border);display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.input-search{position:relative;flex:1;min-width:200px}
+.input-search svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;stroke:var(--text-3);fill:none;stroke-width:2;pointer-events:none}
+.input-search input{width:100%;padding:7px 10px 7px 32px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;background:var(--surface);color:var(--text);outline:none;transition:border-color .15s}
+.input-search input:focus{border-color:var(--primary)}
+.select-filter{padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;background:var(--surface);color:var(--text);outline:none;cursor:pointer;transition:border-color .15s}
+.select-filter:focus{border-color:var(--primary)}
 
-/* ── SECTIONS ── */
-.section { display: none; }
-.section.active { display: block; }
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--radius);font-size:13px;font-weight:500;border:none;transition:all .15s;cursor:pointer;white-space:nowrap}
+.btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-primary:hover{background:var(--primary-hover)}
+.btn-secondary{background:var(--surface);color:var(--text-2);border:1px solid var(--border)}
+.btn-secondary:hover{border-color:var(--border-hover);color:var(--text)}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-success{background:var(--success);color:#fff}
+.btn-success:hover{background:#15803d}
+.btn-warning{background:var(--warning);color:#fff}
+.btn-sm{padding:4px 10px;font-size:12px}
+.btn-icon{padding:6px;background:none;border:1px solid var(--border);border-radius:var(--radius);color:var(--text-2)}
+.btn-icon:hover{border-color:var(--primary);color:var(--primary)}
+.btn-icon svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2}
 
-/* ── STATS GRID ── */
-.stats-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 14px; margin-bottom: 20px;
-}
-.stat-card {
-  background: var(--surface); border-radius: var(--radius-lg);
-  padding: 16px 18px; box-shadow: var(--shadow-sm);
-  border: 1px solid var(--border); display: flex;
-  align-items: flex-start; gap: 12px;
-}
-.stat-icon {
-  width: 38px; height: 38px; border-radius: var(--radius);
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-}
-.stat-icon svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; }
-.stat-icon.green  { background: var(--success-light); color: var(--success); }
-.stat-icon.blue   { background: var(--info-light);    color: var(--info); }
-.stat-icon.orange { background: var(--warning-light); color: var(--warning); }
-.stat-icon.red    { background: var(--danger-light);  color: var(--danger); }
-.stat-body { flex: 1; min-width: 0; }
-.stat-label { font-size: 11px; color: var(--text-3); font-weight: 500; text-transform: uppercase; letter-spacing: 0.4px; }
-.stat-value { font-size: 24px; font-weight: 700; color: var(--text); line-height: 1.2; margin: 2px 0; }
-.stat-sub   { font-size: 11px; color: var(--text-3); }
+/* TABLE */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead tr{border-bottom:1px solid var(--border)}
+th{padding:10px 14px;text-align:left;font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;background:var(--surface)}
+td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:middle;color:var(--text-2)}
+td strong{color:var(--text)}
+tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:#FAFBFC;cursor:pointer}
+.table-actions{display:flex;gap:4px}
 
-/* ── CARD ── */
-.card {
-  background: var(--surface); border-radius: var(--radius-lg);
-  border: 1px solid var(--border); box-shadow: var(--shadow-sm);
-  margin-bottom: 18px; overflow: hidden;
-}
-.card-header {
-  padding: 14px 18px; border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: space-between;
-  flex-wrap: wrap; gap: 8px;
-}
-.card-title { font-size: 13px; font-weight: 600; color: var(--text); }
-.card-actions { display: flex; align-items: center; gap: 6px; }
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500;white-space:nowrap}
+.bg-green{background:var(--success-light);color:#166534}
+.bg-red{background:var(--danger-light);color:#991b1b}
+.bg-yellow{background:var(--warning-light);color:#92400e}
+.bg-blue{background:var(--info-light);color:#1e40af}
+.bg-gray{background:#F1F5F9;color:#475569}
+.bg-purple{background:#F5F3FF;color:#6D28D9}
+.bg-teal{background:#F0FDFA;color:#0F766E}
 
-/* ── TOOLBAR (filters row) ── */
-.toolbar {
-  padding: 10px 16px; background: var(--surface-2);
-  border-bottom: 1px solid var(--border);
-  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
-}
-.input-search {
-  position: relative; flex: 1; min-width: 200px;
-}
-.input-search svg {
-  position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
-  width: 14px; height: 14px; stroke: var(--text-3);
-  fill: none; stroke-width: 2; pointer-events: none;
-}
-.input-search input {
-  width: 100%; padding: 7px 10px 7px 32px;
-  border: 1px solid var(--border); border-radius: var(--radius);
-  font-size: 13px; background: var(--surface); color: var(--text);
-  outline: none; transition: border-color 0.15s;
-}
-.input-search input:focus { border-color: var(--primary); }
-.select-filter {
-  padding: 7px 10px; border: 1px solid var(--border);
-  border-radius: var(--radius); font-size: 13px;
-  background: var(--surface); color: var(--text);
-  outline: none; cursor: pointer; transition: border-color 0.15s;
-}
-.select-filter:focus { border-color: var(--primary); }
+/* PIPELINE STATUS */
+.pipeline{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.pipe-btn{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text-2);transition:all .15s}
+.pipe-btn:hover{border-color:var(--primary);color:var(--primary)}
+.pipe-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
 
-/* ── BUTTONS ── */
-.btn {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 7px 14px; border-radius: var(--radius);
-  font-size: 13px; font-weight: 500; border: none;
-  transition: all 0.15s; cursor: pointer; white-space: nowrap;
-}
-.btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; }
-.btn-primary { background: var(--primary); color: #fff; }
-.btn-primary:hover { background: var(--primary-hover); }
-.btn-secondary {
-  background: var(--surface); color: var(--text-2);
-  border: 1px solid var(--border);
-}
-.btn-secondary:hover { border-color: var(--border-hover); color: var(--text); }
-.btn-danger { background: var(--danger); color: #fff; }
-.btn-danger:hover { background: #b91c1c; }
-.btn-success { background: var(--success); color: #fff; }
-.btn-success:hover { background: #15803d; }
-.btn-sm { padding: 4px 10px; font-size: 12px; }
-.btn-icon {
-  padding: 6px; background: none; border: 1px solid var(--border);
-  border-radius: var(--radius); color: var(--text-2);
-}
-.btn-icon:hover { border-color: var(--primary); color: var(--primary); }
-.btn-icon svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; }
+/* PAGINATION */
+.pagination{padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border);flex-wrap:wrap;gap:8px}
+.pagination-info{font-size:12px;color:var(--text-3)}
+.pagination-btns{display:flex;gap:4px}
+.pg-btn{min-width:30px;height:30px;display:flex;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);font-size:12px;color:var(--text-2);cursor:pointer;transition:all .15s;padding:0 8px}
+.pg-btn:hover{border-color:var(--primary);color:var(--primary)}
+.pg-btn.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.pg-btn:disabled{opacity:.4;cursor:not-allowed}
 
-/* ── TABLE ── */
-.table-wrap { overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-thead tr { border-bottom: 1px solid var(--border); }
-th {
-  padding: 10px 14px; text-align: left;
-  font-size: 11px; font-weight: 600; color: var(--text-3);
-  text-transform: uppercase; letter-spacing: 0.5px;
-  white-space: nowrap; background: var(--surface);
-}
-td {
-  padding: 11px 14px; border-bottom: 1px solid var(--border);
-  vertical-align: middle; color: var(--text-2);
-}
-td strong { color: var(--text); }
-tr:last-child td { border-bottom: none; }
-tbody tr:hover td { background: #FAFBFC; cursor: pointer; }
-.table-actions { display: flex; gap: 4px; }
+/* MODAL */
+.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:500;align-items:center;justify-content:center;padding:16px}
+.modal-backdrop.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--radius-lg);width:100%;max-width:640px;max-height:90vh;display:flex;flex-direction:column;box-shadow:var(--shadow-lg);border:1px solid var(--border)}
+.modal-lg{max-width:800px}
+.modal-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.modal-header h3{font-size:15px;font-weight:600;color:var(--text)}
+.modal-close{background:none;border:none;color:var(--text-3);padding:4px;border-radius:4px;line-height:1;font-size:18px;transition:color .15s}
+.modal-close:hover{color:var(--text)}
+.modal-body{padding:20px;overflow-y:auto;flex:1}
+.modal-footer{padding:14px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;flex-shrink:0}
 
-/* ── BADGES ── */
-.badge {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 2px 8px; border-radius: 20px;
-  font-size: 11px; font-weight: 500; white-space: nowrap;
-}
-.badge-dot {
-  width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0;
-}
-.bg-green   { background: var(--success-light); color: #166534; }
-.bg-red     { background: var(--danger-light);  color: #991b1b; }
-.bg-yellow  { background: var(--warning-light); color: #92400e; }
-.bg-blue    { background: var(--info-light);    color: #1e40af; }
-.bg-gray    { background: #F1F5F9;              color: #475569; }
-.bg-purple  { background: #F5F3FF;              color: #6D28D9; }
+/* FORM */
+.form-group{margin-bottom:14px}
+.form-label{display:block;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--text-3);margin-bottom:5px}
+.form-control{width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;color:var(--text);background:var(--surface);outline:none;transition:border-color .15s}
+.form-control:focus{border-color:var(--primary)}
+textarea.form-control{resize:vertical;min-height:80px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 
-/* ── PAGINATION ── */
-.pagination {
-  padding: 12px 16px; display: flex;
-  align-items: center; justify-content: space-between;
-  border-top: 1px solid var(--border); flex-wrap: wrap; gap: 8px;
-}
-.pagination-info { font-size: 12px; color: var(--text-3); }
-.pagination-btns { display: flex; gap: 4px; }
-.pg-btn {
-  min-width: 30px; height: 30px; display: flex;
-  align-items: center; justify-content: center;
-  border: 1px solid var(--border); border-radius: var(--radius);
-  background: var(--surface); font-size: 12px;
-  color: var(--text-2); cursor: pointer; transition: all 0.15s;
-  padding: 0 8px;
-}
-.pg-btn:hover { border-color: var(--primary); color: var(--primary); }
-.pg-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
-.pg-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+/* SECTION HEADER */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px}
+.section-header h2{font-size:16px;font-weight:700;color:var(--text)}
+.divider{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text-3);margin:16px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
 
-/* ── MODAL ── */
-.modal-backdrop {
-  display: none; position: fixed; inset: 0;
-  background: rgba(15, 23, 42, 0.5);
-  z-index: 500; align-items: center;
-  justify-content: center; padding: 16px;
-}
-.modal-backdrop.open { display: flex; }
-.modal {
-  background: var(--surface); border-radius: var(--radius-lg);
-  width: 100%; max-width: 620px; max-height: 88vh;
-  display: flex; flex-direction: column;
-  box-shadow: var(--shadow-lg); border: 1px solid var(--border);
-}
-.modal-header {
-  padding: 16px 20px; border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; justify-content: space-between;
-  flex-shrink: 0;
-}
-.modal-header h3 { font-size: 15px; font-weight: 600; color: var(--text); }
-.modal-close {
-  background: none; border: none; color: var(--text-3);
-  padding: 4px; border-radius: 4px; line-height: 1;
-  font-size: 18px; transition: color 0.15s;
-}
-.modal-close:hover { color: var(--text); }
-.modal-body { padding: 20px; overflow-y: auto; flex: 1; }
-.modal-footer {
-  padding: 14px 20px; border-top: 1px solid var(--border);
-  display: flex; justify-content: flex-end; gap: 8px; flex-shrink: 0;
-}
+/* ACTIVITY LOG */
+.activity-item{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.activity-item:last-child{border-bottom:none}
+.activity-dot{width:8px;height:8px;border-radius:50%;background:var(--primary);flex-shrink:0;margin-top:5px}
+.activity-content{flex:1}
+.activity-action{font-size:12px;font-weight:500;color:var(--text)}
+.activity-note{font-size:12px;color:var(--text-2);margin-top:2px}
+.activity-meta{font-size:11px;color:var(--text-3);margin-top:2px}
 
-/* ── FORM ── */
-.form-group { margin-bottom: 14px; }
-.form-label {
-  display: block; font-size: 11px; font-weight: 600;
-  text-transform: uppercase; letter-spacing: 0.4px;
-  color: var(--text-3); margin-bottom: 5px;
-}
-.form-control {
-  width: 100%; padding: 8px 12px;
-  border: 1px solid var(--border); border-radius: var(--radius);
-  font-size: 13px; color: var(--text); background: var(--surface);
-  outline: none; transition: border-color 0.15s;
-}
-.form-control:focus { border-color: var(--primary); }
-textarea.form-control { resize: vertical; min-height: 80px; }
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+/* CONV */
+.conv-scroll{max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:6px}
+.conv-msg{padding:8px 10px;border-radius:var(--radius);font-size:12px;max-width:90%}
+.conv-msg.inbound{background:var(--success-light);align-self:flex-start}
+.conv-msg.outbound{background:var(--info-light);align-self:flex-end}
+.conv-msg-meta{font-size:10px;color:var(--text-3);margin-top:2px}
 
-/* ── SECTION HEADER ── */
-.section-header {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 16px; flex-wrap: wrap; gap: 8px;
-}
-.section-header h2 {
-  font-size: 16px; font-weight: 700; color: var(--text);
-}
+/* UPLOAD */
+.upload-zone{border:2px dashed var(--border);border-radius:var(--radius-lg);padding:28px;text-align:center;transition:all .2s;cursor:pointer}
+.upload-zone:hover,.upload-zone.drag-over{border-color:var(--primary);background:var(--primary-light)}
+.upload-icon{color:var(--text-3);margin-bottom:8px}
+.upload-icon svg{width:32px;height:32px;stroke:currentColor;fill:none;stroke-width:1.5}
+.template-box{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-top:12px}
+.template-box code{font-family:'Monaco','Courier New',monospace;font-size:11px;color:var(--primary);display:block;white-space:pre;overflow-x:auto}
 
-/* ── DIVIDER ── */
-.divider {
-  font-size: 11px; font-weight: 600; text-transform: uppercase;
-  letter-spacing: 0.5px; color: var(--text-3);
-  margin: 16px 0 10px; padding-bottom: 6px;
-  border-bottom: 1px solid var(--border);
-}
+/* BROADCAST PREVIEW */
+.preview-pill{display:inline-flex;align-items:center;gap:6px;background:var(--primary-light);color:var(--primary);padding:6px 12px;border-radius:20px;font-size:12px;font-weight:600;margin:8px 0}
+.preview-pill svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2}
 
-/* ── UPLOAD ZONE ── */
-.upload-zone {
-  border: 2px dashed var(--border); border-radius: var(--radius-lg);
-  padding: 28px; text-align: center; transition: all 0.2s; cursor: pointer;
-}
-.upload-zone:hover, .upload-zone.drag-over {
-  border-color: var(--primary); background: var(--primary-light);
-}
-.upload-icon { color: var(--text-3); margin-bottom: 8px; }
-.upload-icon svg { width: 32px; height: 32px; stroke: currentColor; fill: none; stroke-width: 1.5; }
-.upload-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
-.upload-sub   { font-size: 12px; color: var(--text-3); }
-.upload-sub a { color: var(--primary); text-decoration: underline; cursor: pointer; }
+/* TOAST */
+.toast-stack{position:fixed;bottom:20px;right:20px;z-index:999;display:flex;flex-direction:column;gap:8px}
+.toast{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:var(--radius);box-shadow:var(--shadow-lg);font-size:13px;font-weight:500;min-width:260px;animation:toastIn .25s ease}
+.toast svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0}
+.toast-success{background:var(--success);color:#fff}
+.toast-error{background:var(--danger);color:#fff}
+.toast-info{background:var(--info);color:#fff}
+@keyframes toastIn{from{transform:translateX(60px);opacity:0}to{transform:translateX(0);opacity:1}}
 
-/* ── CSV TEMPLATE ── */
-.template-box {
-  background: var(--surface-2); border: 1px solid var(--border);
-  border-radius: var(--radius); padding: 12px 14px; margin-top: 12px;
-}
-.template-box code {
-  font-family: 'Monaco', 'Courier New', monospace;
-  font-size: 11px; color: var(--primary); display: block;
-  white-space: pre; overflow-x: auto;
-}
+/* SPINNER */
+.spinner{width:20px;height:20px;border-radius:50%;border:2px solid var(--border);border-top-color:var(--primary);animation:spin .7s linear infinite}
+.spinner-lg{width:32px;height:32px;border-width:3px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px;gap:12px;color:var(--text-3);font-size:13px}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px;gap:8px;color:var(--text-3)}
+.empty-state svg{width:36px;height:36px;stroke:currentColor;fill:none;stroke-width:1.5;opacity:.5}
+.empty-state p{font-size:13px}
 
-/* ── TOAST ── */
-.toast-stack {
-  position: fixed; bottom: 20px; right: 20px;
-  z-index: 999; display: flex; flex-direction: column; gap: 8px;
-}
-.toast {
-  display: flex; align-items: center; gap: 10px;
-  padding: 12px 16px; border-radius: var(--radius);
-  box-shadow: var(--shadow-lg); font-size: 13px; font-weight: 500;
-  min-width: 260px; animation: toastIn 0.25s ease;
-}
-.toast svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; flex-shrink: 0; }
-.toast-success { background: var(--success); color: #fff; }
-.toast-error   { background: var(--danger);  color: #fff; }
-.toast-info    { background: var(--info);    color: #fff; }
-@keyframes toastIn {
-  from { transform: translateX(60px); opacity: 0; }
-  to   { transform: translateX(0);    opacity: 1; }
-}
+/* DETAIL GRID */
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.detail-item label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;color:var(--text-3);display:block;margin-bottom:2px}
+.detail-item span{font-size:13px;color:var(--text)}
 
-/* ── SPINNER ── */
-.spinner {
-  width: 20px; height: 20px; border-radius: 50%;
-  border: 2px solid var(--border); border-top-color: var(--primary);
-  animation: spin 0.7s linear infinite;
-}
-.spinner-lg { width: 32px; height: 32px; border-width: 3px; }
-@keyframes spin { to { transform: rotate(360deg); } }
-.loading-state {
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  padding: 48px; gap: 12px; color: var(--text-3); font-size: 13px;
-}
+/* SIDEBAR BACKDROP */
+.sidebar-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:99}
+.sidebar-backdrop.open{display:block}
 
-/* ── EMPTY STATE ── */
-.empty-state {
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  padding: 48px; gap: 8px; color: var(--text-3);
+/* RESPONSIVE */
+@media(max-width:768px){
+  .sidebar{position:fixed;top:0;left:0;bottom:0;z-index:100;transform:translateX(-100%);transition:transform .25s}
+  .sidebar.open{transform:translateX(0)}
+  .main{width:100%}
+  .menu-toggle{display:flex}
+  .form-row{grid-template-columns:1fr}
+  .detail-grid{grid-template-columns:1fr}
+  .stats-row{grid-template-columns:repeat(2,1fr)}
+  .toolbar{gap:6px}
+  .input-search{min-width:unset;width:100%}
+  .content-area{padding:14px}
 }
-.empty-state svg { width: 36px; height: 36px; stroke: currentColor; fill: none; stroke-width: 1.5; opacity: 0.5; }
-.empty-state p { font-size: 13px; }
-
-/* ── DETAIL GRID ── */
-.detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.detail-item label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-3); display: block; margin-bottom: 2px; }
-.detail-item span  { font-size: 13px; color: var(--text); }
-
-/* ── CONVERSATION ── */
-.conv-scroll { max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
-.conv-msg {
-  padding: 8px 10px; border-radius: var(--radius);
-  font-size: 12px; max-width: 90%;
-}
-.conv-msg.inbound  { background: var(--success-light); align-self: flex-start; }
-.conv-msg.outbound { background: var(--info-light); align-self: flex-end; }
-.conv-msg-meta { font-size: 10px; color: var(--text-3); margin-top: 2px; }
-
-/* ── BROADCAST PREVIEW ── */
-.preview-pill {
-  display: inline-flex; align-items: center; gap: 6px;
-  background: var(--primary-light); color: var(--primary);
-  padding: 6px 12px; border-radius: 20px; font-size: 12px;
-  font-weight: 600; margin: 8px 0;
-}
-.preview-pill svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; }
-
-/* ── SIDEBAR OVERLAY (mobile) ── */
-.sidebar-backdrop {
-  display: none; position: fixed; inset: 0;
-  background: rgba(0,0,0,0.35); z-index: 99;
-}
-.sidebar-backdrop.open { display: block; }
-
-/* ── RESPONSIVE ── */
-@media (max-width: 768px) {
-  .sidebar {
-    position: fixed; top: 0; left: 0; bottom: 0; z-index: 100;
-    transform: translateX(-100%); transition: transform 0.25s;
-  }
-  .sidebar.open { transform: translateX(0); }
-  .main { width: 100%; }
-  .menu-toggle { display: flex; }
-  .form-row { grid-template-columns: 1fr; }
-  .detail-grid { grid-template-columns: 1fr; }
-  .stats-row { grid-template-columns: repeat(2, 1fr); }
-  .toolbar { gap: 6px; }
-  .input-search { min-width: unset; width: 100%; }
-  .content-area { padding: 14px; }
-}
-@media (max-width: 480px) {
-  .stats-row { grid-template-columns: 1fr 1fr; }
-  .stat-value { font-size: 20px; }
+@media(max-width:480px){
+  .stats-row{grid-template-columns:1fr 1fr}
+  .stat-value{font-size:20px}
 }
 </style>
 </head>
 <body>
 
-<!-- ════════════════════════════════════════════════════════
-     LOGIN PAGE
-════════════════════════════════════════════════════════ -->
+<!-- LOGIN -->
 <div id="login-page">
   <div class="login-card">
     <div class="login-logo">
@@ -539,12 +280,12 @@ textarea.form-control { resize: vertical; min-height: 80px; }
     </div>
     <div class="login-error" id="login-error"></div>
     <div class="form-group">
-<label class="form-label">Email or Username</label>
-<input class="form-control" id="login-user" type="text" placeholder="email@applyboardafrica.com">
+      <label class="form-label">Email or Username</label>
+      <input class="form-control" id="login-user" type="text" placeholder="email@applyboardafrica.com" autocomplete="username">
     </div>
     <div class="form-group">
       <label class="form-label">Password</label>
-      <input class="form-control" id="login-pass" type="password" placeholder="Enter password" autocomplete="current-password"
+      <input class="form-control" id="login-pass" type="password" placeholder="Enter password"
         onkeydown="if(event.key==='Enter') doLogin()">
     </div>
     <button class="btn btn-primary" style="width:100%;justify-content:center;padding:10px" onclick="doLogin()" id="login-btn">
@@ -553,66 +294,64 @@ textarea.form-control { resize: vertical; min-height: 80px; }
   </div>
 </div>
 
-<!-- ════════════════════════════════════════════════════════
-     APP
-════════════════════════════════════════════════════════ -->
+<!-- APP -->
 <div id="app">
   <div class="layout">
 
-    <!-- SIDEBAR -->
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-header">
         <div class="brand">
           <div class="brand-icon">
             <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
           </div>
-          <div class="brand-text">
+          <div>
             <div class="brand-name">ApplyBoard Africa</div>
             <div class="brand-sub">CRM Dashboard</div>
           </div>
         </div>
       </div>
-
       <nav class="nav">
-        <div class="nav-section">
-          <div class="nav-label">Main</div>
-          <button class="nav-btn active" id="nav-overview" onclick="showSection('overview')">
-            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-            Overview
-          </button>
-          <button class="nav-btn" id="nav-leads" onclick="showSection('leads')">
-            <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            Leads CRM
-            <span class="nav-badge" id="badge-escalated" style="display:none">!</span>
-          </button>
-          <button class="nav-btn" id="nav-consultations" onclick="showSection('consultations')">
-            <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            Consultations
-          </button>
-          <button class="nav-btn" id="nav-payments" onclick="showSection('payments')">
-            <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-            Payments
-          </button>
-        </div>
-        <div class="nav-section">
-          <div class="nav-label">Messaging</div>
-          <button class="nav-btn" id="nav-broadcast" onclick="showSection('broadcast')">
-            <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.4a16 16 0 0 0 6.12 6.12l.9-.9a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-            Broadcast
-          </button>
-          <button class="nav-btn" id="nav-message" onclick="showSection('message')">
-            <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            Direct Message
-          </button>
-        </div>
+        <div class="nav-label">Main</div>
+        <button class="nav-btn active" id="nav-overview" onclick="showSection('overview')">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Overview
+        </button>
+        <button class="nav-btn" id="nav-leads" onclick="showSection('leads')">
+          <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Leads CRM
+          <span class="nav-badge" id="badge-new" style="display:none">0</span>
+        </button>
+        <button class="nav-btn" id="nav-registered" onclick="showSection('registered')">
+          <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          Registered
+          <span class="nav-badge" id="badge-pending" style="display:none">0</span>
+        </button>
+        <button class="nav-btn" id="nav-payments" onclick="showSection('payments')">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          Payments
+        </button>
+        <button class="nav-btn" id="nav-escalated" onclick="showSection('escalated')">
+          <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Escalations
+          <span class="nav-badge" id="badge-escalated" style="display:none">0</span>
+        </button>
+        <div class="nav-label" style="margin-top:8px">Messaging</div>
+        <button class="nav-btn" id="nav-broadcast" onclick="showSection('broadcast')">
+          <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.38 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.4a16 16 0 0 0 6.12 6.12l.9-.9a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          Broadcast
+        </button>
+        <button class="nav-btn" id="nav-message" onclick="showSection('message')">
+          <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Direct Message
+        </button>
       </nav>
-
       <div class="sidebar-footer">
         <div class="user-row">
           <div class="user-avatar" id="user-avatar">A</div>
           <div class="user-info">
             <div class="user-name" id="user-name-display">Admin</div>
-            <div class="user-role">Administrator</div>
+            <div class="user-dept" id="user-dept-display"></div>
+            <div class="user-role" id="user-role-display">Administrator</div>
           </div>
           <button class="btn-logout" onclick="doLogout()" title="Sign out">
             <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -623,7 +362,6 @@ textarea.form-control { resize: vertical; min-height: 80px; }
 
     <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="closeSidebar()"></div>
 
-    <!-- MAIN -->
     <div class="main">
       <div class="topbar">
         <div class="topbar-left">
@@ -643,48 +381,44 @@ textarea.form-control { resize: vertical; min-height: 80px; }
 
       <div class="content-area">
 
-        <!-- ══ OVERVIEW ══ -->
+        <!-- OVERVIEW -->
         <div class="section active" id="section-overview">
           <div class="stats-row" id="stats-grid">
             <div class="loading-state"><div class="spinner spinner-lg"></div></div>
           </div>
-          <div class="card">
-            <div class="card-header">
-              <span class="card-title">Recent Leads</span>
-              <button class="btn btn-secondary btn-sm" onclick="showSection('leads')">View all</button>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">New Leads Today</span>
+                <button class="btn btn-secondary btn-sm" onclick="showSection('leads')">View all</button>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>Phone</th><th>Name</th><th>Service</th><th>Stage</th><th>Time</th></tr></thead>
+                  <tbody id="tb-today-leads">
+                    <tr><td colspan="5"><div class="loading-state"><div class="spinner"></div></div></td></tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
-            <div class="table-wrap">
-              <table>
-                <thead><tr>
-                  <th>Phone</th><th>Name</th><th>Service</th>
-                  <th>Stage</th><th>Last Seen</th>
-                </tr></thead>
-                <tbody id="tb-recent-leads">
-                  <tr><td colspan="5"><div class="loading-state"><div class="spinner"></div></div></td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-          <div class="card">
-            <div class="card-header">
-              <span class="card-title">Pending Consultations</span>
-              <button class="btn btn-secondary btn-sm" onclick="showSection('consultations')">View all</button>
-            </div>
-            <div class="table-wrap">
-              <table>
-                <thead><tr>
-                  <th>Client</th><th>Phone</th><th>Topic</th>
-                  <th>Preferred Time</th><th>Actions</th>
-                </tr></thead>
-                <tbody id="tb-pending-consults">
-                  <tr><td colspan="5"><div class="loading-state"><div class="spinner"></div></div></td></tr>
-                </tbody>
-              </table>
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">Pending Action</span>
+                <button class="btn btn-secondary btn-sm" onclick="showSection('registered')">View all</button>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>Name</th><th>Service</th><th>Status</th><th>Actions</th></tr></thead>
+                  <tbody id="tb-pending-action">
+                    <tr><td colspan="4"><div class="loading-state"><div class="spinner"></div></div></td></tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- ══ LEADS CRM ══ -->
+        <!-- LEADS CRM -->
         <div class="section" id="section-leads">
           <div class="section-header">
             <h2>Leads CRM</h2>
@@ -695,7 +429,7 @@ textarea.form-control { resize: vertical; min-height: 80px; }
               </button>
               <button class="btn btn-primary btn-sm" onclick="exportLeads()">
                 <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                Export CSV
+                Export
               </button>
             </div>
           </div>
@@ -707,8 +441,7 @@ textarea.form-control { resize: vertical; min-height: 80px; }
             <div class="toolbar">
               <div class="input-search">
                 <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <input id="lead-search" placeholder="Search name, phone, email..."
-                  onkeydown="if(event.key==='Enter') applyFilters()">
+                <input id="lead-search" placeholder="Search name, phone, email..." onkeydown="if(event.key==='Enter') applyFilters()">
               </div>
               <select class="select-filter" id="f-service">
                 <option value="">All Services</option>
@@ -720,13 +453,13 @@ textarea.form-control { resize: vertical; min-height: 80px; }
                 <option value="pilgrimage">Pilgrimage</option>
                 <option value="pof">Proof of Funds</option>
               </select>
-              <select class="select-filter" id="f-stage">
-                <option value="">All Stages</option>
-                <option value="greeting">Greeting</option>
-                <option value="qualified">Qualified</option>
-                <option value="consultation_booked">Booked</option>
-                <option value="paid">Paid</option>
-                <option value="escalated">Escalated</option>
+              <select class="select-filter" id="f-lead-status">
+                <option value="">All Status</option>
+                <option value="new">New</option>
+                <option value="contacted">Contacted</option>
+                <option value="in_progress">In Progress</option>
+                <option value="completed">Completed</option>
+                <option value="lost">Lost</option>
               </select>
               <select class="select-filter" id="f-payment">
                 <option value="">All Payments</option>
@@ -734,15 +467,11 @@ textarea.form-control { resize: vertical; min-height: 80px; }
                 <option value="pending">Pending</option>
                 <option value="paid">Paid</option>
               </select>
-              <select class="select-filter" id="f-country">
-                <option value="">All Countries</option>
-                <option value="Canada">Canada</option>
-                <option value="United Kingdom">United Kingdom</option>
-                <option value="United States">United States</option>
-                <option value="Germany">Germany</option>
-                <option value="Australia">Australia</option>
-                <option value="Ireland">Ireland</option>
-                <option value="New Zealand">New Zealand</option>
+              <select class="select-filter" id="f-source">
+                <option value="">All Channels</option>
+                <option value="whatsapp">WhatsApp</option>
+                <option value="telegram">Telegram</option>
+                <option value="import">Imported</option>
               </select>
               <button class="btn btn-primary btn-sm" onclick="applyFilters()">Apply</button>
               <button class="btn btn-secondary btn-sm" onclick="clearFilters()">Clear</button>
@@ -750,13 +479,11 @@ textarea.form-control { resize: vertical; min-height: 80px; }
             <div class="table-wrap">
               <table>
                 <thead><tr>
-                  <th>Phone</th><th>Name</th><th>Service</th>
-                  <th>Destination</th><th>Stage</th>
-                  <th>Payment</th><th>Consulted</th>
-                  <th>Last Seen</th><th>Actions</th>
+                  <th>Phone</th><th>Name</th><th>Service</th><th>Channel</th>
+                  <th>Payment</th><th>Status</th><th>Last Seen</th><th>Actions</th>
                 </tr></thead>
                 <tbody id="tb-leads">
-                  <tr><td colspan="9"><div class="loading-state"><div class="spinner"></div>Loading leads...</div></td></tr>
+                  <tr><td colspan="8"><div class="loading-state"><div class="spinner"></div>Loading...</div></td></tr>
                 </tbody>
               </table>
             </div>
@@ -767,41 +494,40 @@ textarea.form-control { resize: vertical; min-height: 80px; }
           </div>
         </div>
 
-        <!-- ══ CONSULTATIONS ══ -->
-        <div class="section" id="section-consultations">
-          <div class="section-header"><h2>Consultations</h2></div>
+        <!-- REGISTERED LEADS -->
+        <div class="section" id="section-registered">
+          <div class="section-header">
+            <h2>Registered Leads</h2>
+            <span style="font-size:12px;color:var(--text-3)">Paid ₦10,000 — ready for follow-up</span>
+          </div>
+          <div class="pipeline" id="pipeline-btns">
+            <button class="pipe-btn active" onclick="setPipeline('')">All</button>
+            <button class="pipe-btn" onclick="setPipeline('new')">New</button>
+            <button class="pipe-btn" onclick="setPipeline('contacted')">Contacted</button>
+            <button class="pipe-btn" onclick="setPipeline('in_progress')">In Progress</button>
+            <button class="pipe-btn" onclick="setPipeline('completed')">Completed</button>
+            <button class="pipe-btn" onclick="setPipeline('lost')">Lost</button>
+          </div>
           <div class="card">
-            <div class="card-header"><span class="card-title">All Consultations</span></div>
-            <div class="toolbar">
-              <select class="select-filter" id="f-consult-status">
-                <option value="">All Status</option>
-                <option value="pending">Pending</option>
-                <option value="confirmed">Confirmed</option>
-                <option value="completed">Completed</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
-              <input type="date" class="select-filter" id="f-consult-date" style="min-width:unset">
-              <button class="btn btn-primary btn-sm" onclick="loadConsultations()">Apply</button>
-              <button class="btn btn-secondary btn-sm" onclick="
-                document.getElementById('f-consult-status').value='';
-                document.getElementById('f-consult-date').value='';
-                loadConsultations()">Clear</button>
+            <div class="card-header">
+              <span class="card-title">Registered Clients</span>
+              <span id="reg-count-label" style="font-size:12px;color:var(--text-3)"></span>
             </div>
             <div class="table-wrap">
               <table>
                 <thead><tr>
-                  <th>Client</th><th>Phone</th><th>Topic</th>
-                  <th>Preferred Time</th><th>Status</th><th>Booked</th><th>Actions</th>
+                  <th>Name</th><th>Phone</th><th>Service</th><th>Destination</th>
+                  <th>Assigned To</th><th>Status</th><th>Registered</th><th>Actions</th>
                 </tr></thead>
-                <tbody id="tb-consultations">
-                  <tr><td colspan="7"><div class="loading-state"><div class="spinner"></div></div></td></tr>
+                <tbody id="tb-registered">
+                  <tr><td colspan="8"><div class="loading-state"><div class="spinner"></div></div></td></tr>
                 </tbody>
               </table>
             </div>
           </div>
         </div>
 
-        <!-- ══ PAYMENTS ══ -->
+        <!-- PAYMENTS -->
         <div class="section" id="section-payments">
           <div class="section-header">
             <h2>Payments</h2>
@@ -821,98 +547,108 @@ textarea.form-control { resize: vertical; min-height: 80px; }
             <div class="table-wrap">
               <table>
                 <thead><tr>
-                  <th>Reference</th><th>Client</th><th>Phone</th>
-                  <th>Amount</th><th>Service</th><th>Method</th>
-                  <th>Status</th><th>Date</th><th>Actions</th>
+                  <th>Reference</th><th>Client</th><th>Phone</th><th>Amount</th>
+                  <th>Service</th><th>Status</th><th>Date</th><th>Actions</th>
                 </tr></thead>
                 <tbody id="tb-payments">
-                  <tr><td colspan="9"><div class="loading-state"><div class="spinner"></div></div></td></tr>
+                  <tr><td colspan="8"><div class="loading-state"><div class="spinner"></div></div></td></tr>
                 </tbody>
               </table>
             </div>
           </div>
         </div>
 
-        <!-- ══ BROADCAST ══ -->
+        <!-- ESCALATIONS -->
+        <div class="section" id="section-escalated">
+          <div class="section-header"><h2>Escalations</h2></div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">Leads Needing Attention</span></div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr>
+                  <th>Phone</th><th>Name</th><th>Service</th><th>Stage</th><th>Last Seen</th><th>Actions</th>
+                </tr></thead>
+                <tbody id="tb-escalated">
+                  <tr><td colspan="6"><div class="loading-state"><div class="spinner"></div></div></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- BROADCAST -->
         <div class="section" id="section-broadcast">
           <div class="section-header"><h2>Broadcast</h2></div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
-            <div>
-              <div class="card">
-                <div class="card-header"><span class="card-title">New Broadcast</span></div>
-                <div style="padding:18px">
+            <div class="card">
+              <div class="card-header"><span class="card-title">New Broadcast</span></div>
+              <div style="padding:18px">
+                <div class="form-group">
+                  <label class="form-label">Campaign Title</label>
+                  <input class="form-control" id="bc-title" placeholder="e.g. New IELTS Batch — June 2026">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Message — use {{name}} for personalisation</label>
+                  <textarea class="form-control" id="bc-message" rows="5"
+                    placeholder="Hey {{name}}, exciting update from ApplyBoard Africa..."
+                    oninput="document.getElementById('bc-chars').textContent=this.value.length"></textarea>
+                  <div style="font-size:11px;color:var(--text-3);text-align:right;margin-top:3px">
+                    <span id="bc-chars">0</span> characters
+                  </div>
+                </div>
+                <div class="form-row">
                   <div class="form-group">
-                    <label class="form-label">Campaign Title</label>
-                    <input class="form-control" id="bc-title" placeholder="e.g. New IELTS Batch — May 2025">
+                    <label class="form-label">Filter by Service</label>
+                    <select class="form-control" id="bc-service" onchange="previewCount()">
+                      <option value="">All Services</option>
+                      <option value="study_abroad">Study Abroad</option>
+                      <option value="visa">Visa</option>
+                      <option value="test_prep">Test Prep</option>
+                      <option value="loan">Loan</option>
+                      <option value="travel">Travel</option>
+                      <option value="pilgrimage">Pilgrimage</option>
+                    </select>
                   </div>
                   <div class="form-group">
-                    <label class="form-label">Message <span style="font-weight:400;text-transform:none">— use {{name}} for personalisation</span></label>
-                    <textarea class="form-control" id="bc-message" rows="5"
-                      placeholder="Hi {{name}}, exciting news from ApplyBoard Africa..."
-                      oninput="document.getElementById('bc-chars').textContent=this.value.length"></textarea>
-                    <div style="font-size:11px;color:var(--text-3);text-align:right;margin-top:3px">
-                      <span id="bc-chars">0</span> characters
-                    </div>
+                    <label class="form-label">Filter by Channel</label>
+                    <select class="form-control" id="bc-source" onchange="previewCount()">
+                      <option value="">All Channels</option>
+                      <option value="whatsapp">WhatsApp only</option>
+                      <option value="telegram">Telegram only</option>
+                    </select>
                   </div>
-                  <div class="form-row">
-                    <div class="form-group">
-                      <label class="form-label">Filter by Service</label>
-                      <select class="form-control" id="bc-service" onchange="previewCount()">
-                        <option value="">All Services</option>
-                        <option value="study_abroad">Study Abroad</option>
-                        <option value="visa">Visa</option>
-                        <option value="test_prep">Test Prep</option>
-                        <option value="loan">Loan</option>
-                        <option value="travel">Travel</option>
-                        <option value="pilgrimage">Pilgrimage</option>
-                      </select>
-                    </div>
-                    <div class="form-group">
-                      <label class="form-label">Filter by Country</label>
-                      <select class="form-control" id="bc-country" onchange="previewCount()">
-                        <option value="">All Countries</option>
-                        <option value="Canada">Canada</option>
-                        <option value="United Kingdom">United Kingdom</option>
-                        <option value="Germany">Germany</option>
-                        <option value="Australia">Australia</option>
-                        <option value="Ireland">Ireland</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div id="bc-preview-pill" style="display:none" class="preview-pill">
-                    <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                    Reaches <strong id="bc-count">0</strong>&nbsp;contacts
-                  </div>
-                  <div style="display:flex;gap:8px;margin-top:8px">
-                    <button class="btn btn-primary" onclick="sendBroadcast()" id="bc-btn">
-                      <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                      Send Broadcast
-                    </button>
-                    <button class="btn btn-secondary" onclick="previewCount()">
-                      <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                      Preview
-                    </button>
-                  </div>
+                </div>
+                <div id="bc-preview-pill" style="display:none" class="preview-pill">
+                  <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+                  Reaches <strong id="bc-count">0</strong>&nbsp;contacts
+                </div>
+                <div style="display:flex;gap:8px;margin-top:8px">
+                  <button class="btn btn-primary" onclick="sendBroadcast()" id="bc-btn">
+                    <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                    Send Broadcast
+                  </button>
+                  <button class="btn btn-secondary" onclick="previewCount()">
+                    <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    Preview
+                  </button>
                 </div>
               </div>
             </div>
-            <div>
-              <div class="card">
-                <div class="card-header"><span class="card-title">Broadcast History</span></div>
-                <div class="table-wrap">
-                  <table>
-                    <thead><tr><th>Title</th><th>Sent</th><th>Failed</th><th>Status</th><th>Date</th></tr></thead>
-                    <tbody id="tb-broadcasts">
-                      <tr><td colspan="5"><div class="loading-state"><div class="spinner"></div></div></td></tr>
-                    </tbody>
-                  </table>
-                </div>
+            <div class="card">
+              <div class="card-header"><span class="card-title">Broadcast History</span></div>
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>Title</th><th>Sent</th><th>Failed</th><th>Status</th><th>Date</th></tr></thead>
+                  <tbody id="tb-broadcasts">
+                    <tr><td colspan="5"><div class="loading-state"><div class="spinner"></div></div></td></tr>
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- ══ DIRECT MESSAGE ══ -->
+        <!-- DIRECT MESSAGE -->
         <div class="section" id="section-message">
           <div class="section-header"><h2>Direct Message</h2></div>
           <div class="card" style="max-width:480px">
@@ -920,7 +656,8 @@ textarea.form-control { resize: vertical; min-height: 80px; }
             <div style="padding:18px">
               <div class="form-group">
                 <label class="form-label">Contact Number</label>
-                <input class="form-control" id="dm-phone" placeholder="+2349165092953">
+                <input class="form-control" id="dm-phone" placeholder="+2349165092953 or tg_12345678">
+                <div style="font-size:11px;color:var(--text-3);margin-top:4px">WhatsApp: +234... — Telegram: tg_chatid</div>
               </div>
               <div class="form-group">
                 <label class="form-label">Message</label>
@@ -934,14 +671,14 @@ textarea.form-control { resize: vertical; min-height: 80px; }
           </div>
         </div>
 
-      </div><!-- /content-area -->
-    </div><!-- /main -->
-  </div><!-- /layout -->
-</div><!-- /app -->
+      </div>
+    </div>
+  </div>
+</div>
 
-<!-- ══ LEAD DETAIL MODAL ══ -->
+<!-- LEAD DETAIL MODAL -->
 <div class="modal-backdrop" id="modal-lead">
-  <div class="modal">
+  <div class="modal modal-lg">
     <div class="modal-header">
       <h3 id="modal-lead-title">Lead Details</h3>
       <button class="modal-close" onclick="closeModal('modal-lead')">&#x2715;</button>
@@ -956,7 +693,7 @@ textarea.form-control { resize: vertical; min-height: 80px; }
   </div>
 </div>
 
-<!-- ══ IMPORT MODAL ══ -->
+<!-- IMPORT MODAL -->
 <div class="modal-backdrop" id="modal-import">
   <div class="modal">
     <div class="modal-header">
@@ -972,8 +709,7 @@ textarea.form-control { resize: vertical; min-height: 80px; }
 +2347011223344,Chidi Obi,chidi@co.com,test_prep,,</code>
       </div>
       <div style="margin:10px 0 14px;font-size:12px;color:var(--text-3)">
-        Only <strong>phone</strong> is required. All other columns are optional.
-        Duplicate phone numbers will be updated, not duplicated.
+        Only <strong>phone</strong> is required. Duplicates are updated not re-created.
       </div>
       <button class="btn btn-secondary btn-sm" onclick="downloadTemplate()" style="margin-bottom:16px">
         <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -996,359 +732,238 @@ textarea.form-control { resize: vertical; min-height: 80px; }
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" onclick="closeModal('modal-import')">Close</button>
-      <button class="btn btn-primary" onclick="doImport()" id="import-btn" disabled>
-        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        Import Leads
-      </button>
+      <button class="btn btn-primary" onclick="doImport()" id="import-btn" disabled>Import Leads</button>
     </div>
   </div>
 </div>
 
-<!-- TOAST -->
 <div class="toast-stack" id="toasts"></div>
 
-<!-- ════════════════════════════════════════════════════════
-     JAVASCRIPT
-════════════════════════════════════════════════════════ -->
 <script>
 'use strict';
 
-// ── STATE ─────────────────────────────────────────────────
-let TOKEN         = null;
-let currentLeadId = null;
-let leadsPage     = 0;
-let leadsFilters  = {};
-let csvRows       = [];
-const PER_PAGE    = 25;
+let TOKEN = null, currentLeadId = null, leadsPage = 0;
+let leadsFilters = {}, csvRows = [], registeredFilter = '';
+const PER_PAGE = 25;
 let currentSection = 'overview';
-let refreshTimer  = null;
 
-// ── SVG ICONS (inline helpers) ────────────────────────────
 const ic = {
-  check: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>`,
-  x:     `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
-  msg:   `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
-  edit:  `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
+  check:`<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>`,
+  msg:  `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
+  edit: `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
+  note: `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`,
 };
 
-// ════════════════════════════════════════════════════════
-// AUTH
-// ════════════════════════════════════════════════════════
+// ── AUTH ──────────────────────────────────────────────────
 const doLogin = async () => {
   const emailOrUser = document.getElementById('login-user').value.trim();
   const pass        = document.getElementById('login-pass').value;
   const err         = document.getElementById('login-error');
   const btn         = document.getElementById('login-btn');
-
-  if (!emailOrUser || !pass) {
-    err.style.display = 'block';
-    err.textContent   = 'Please enter your email and password.';
-    return;
-  }
-
-  btn.disabled    = true;
-  btn.textContent = 'Signing in...';
-  err.style.display = 'none';
-
+  if (!emailOrUser || !pass) { showErr('Please enter your email and password.'); return; }
+  btn.disabled = true; btn.textContent = 'Signing in...'; err.style.display = 'none';
   try {
     let res;
-
     if (emailOrUser.includes('@')) {
-      // Team member — email login
       res = await fetch('/admin/auth/token', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ email: emailOrUser, password: pass }),
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ email: emailOrUser, password: pass }),
       });
     } else {
-      // Super admin — basic auth
       res = await fetch('/admin/auth/token', {
-        method:  'POST',
-        headers: {
-          'Authorization': 'Basic ' + btoa(
-            unescape(encodeURIComponent(emailOrUser + ':' + pass))
-          ),
-        },
+        method:'POST',
+        headers:{ 'Authorization':'Basic ' + btoa(unescape(encodeURIComponent(emailOrUser+':'+pass))) },
       });
     }
-
     const data = await res.json();
     if (!res.ok || !data.token) throw new Error(data.error || 'Invalid credentials');
-
     TOKEN = data.token;
     sessionStorage.setItem('adminToken', TOKEN);
     sessionStorage.setItem('adminUser',  data.user?.name       || emailOrUser);
     sessionStorage.setItem('adminRole',  data.user?.role       || 'agent');
     sessionStorage.setItem('adminDept',  data.user?.department || '');
-
-    document.getElementById('login-page').style.display  = 'none';
-    document.getElementById('app').style.display         = 'flex';
-    document.getElementById('user-name-display').textContent =
-      data.user?.name || emailOrUser;
-    document.getElementById('user-avatar').textContent =
-      (data.user?.name || emailOrUser)[0].toUpperCase();
-
-    initApp();
-  } catch (e) {
-    err.style.display = 'block';
-    err.textContent   = e.message || 'Login failed. Check your credentials.';
+    launchApp(data.user);
+  } catch(e) {
+    showErr(e.message || 'Login failed.');
   } finally {
-    btn.disabled    = false;
-    btn.textContent = 'Sign In';
+    btn.disabled = false; btn.textContent = 'Sign In';
   }
 };
-
-
+const showErr = (msg) => {
+  const el = document.getElementById('login-error');
+  el.style.display = 'block'; el.textContent = msg;
+};
 const doLogout = () => {
-  sessionStorage.clear();
-  TOKEN = null;
-  document.getElementById('app').style.display = 'none';
+  sessionStorage.clear(); TOKEN = null;
+  document.getElementById('app').style.display        = 'none';
   document.getElementById('login-page').style.display = 'flex';
   document.getElementById('login-pass').value = '';
 };
-
-// Check for existing session on load
+const launchApp = (user) => {
+  document.getElementById('login-page').style.display = 'none';
+  document.getElementById('app').style.display        = 'flex';
+  const name = user?.name || sessionStorage.getItem('adminUser') || 'Admin';
+  const dept = user?.department || sessionStorage.getItem('adminDept') || '';
+  const role = user?.role || sessionStorage.getItem('adminRole') || 'agent';
+  document.getElementById('user-name-display').textContent = name;
+  document.getElementById('user-avatar').textContent       = name[0].toUpperCase();
+  document.getElementById('user-dept-display').textContent = dept ? dept.charAt(0).toUpperCase()+dept.slice(1) : '';
+  document.getElementById('user-role-display').textContent = role;
+  initApp();
+};
 window.addEventListener('DOMContentLoaded', () => {
   const saved = sessionStorage.getItem('adminToken');
-  const user  = sessionStorage.getItem('adminUser') || 'Admin';
   if (saved) {
     TOKEN = saved;
-    document.getElementById('login-page').style.display  = 'none';
-    document.getElementById('app').style.display         = 'flex';
-    document.getElementById('user-name-display').textContent = user;
-    document.getElementById('user-avatar').textContent       = user[0].toUpperCase();
-    initApp();
+    launchApp({
+      name:       sessionStorage.getItem('adminUser'),
+      department: sessionStorage.getItem('adminDept'),
+      role:       sessionStorage.getItem('adminRole'),
+    });
   } else {
     document.getElementById('login-page').style.display = 'flex';
     document.getElementById('app').style.display        = 'none';
   }
 });
-
 const initApp = () => {
-  loadOverview();
-  startClock();
-  // Auto-refresh every 90 seconds
-  refreshTimer = setInterval(refreshCurrent, 90000);
+  loadOverview(); startClock();
+  setInterval(refreshCurrent, 90000);
 };
 
-// ════════════════════════════════════════════════════════
-// API HELPER
-// ════════════════════════════════════════════════════════
+// ── API ───────────────────────────────────────────────────
 const api = async (url, opts = {}) => {
   const token = TOKEN || sessionStorage.getItem('adminToken');
   const res   = await fetch(url, {
     ...opts,
-    headers: {
-      'Content-Type':  'application/json',
-      'x-admin-token': token,
-      ...opts.headers,
-    },
+    headers: { 'Content-Type':'application/json', 'x-admin-token':token, ...opts.headers },
   });
-  if (res.status === 401) {
-    doLogout();
-    throw new Error('Session expired. Please log in again.');
-  }
+  if (res.status === 401) { doLogout(); throw new Error('Session expired.'); }
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
   return data;
 };
 
-// ════════════════════════════════════════════════════════
-// NAVIGATION
-// ════════════════════════════════════════════════════════
-const SECTION_TITLES = {
-  overview: 'Overview', leads: 'Leads CRM',
-  consultations: 'Consultations', payments: 'Payments',
-  broadcast: 'Broadcast', message: 'Direct Message',
-};
-
+// ── NAV ───────────────────────────────────────────────────
+const TITLES = { overview:'Overview', leads:'Leads CRM', registered:'Registered Leads', payments:'Payments', escalated:'Escalations', broadcast:'Broadcast', message:'Direct Message' };
 const showSection = (name) => {
   document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   document.getElementById(`section-${name}`).classList.add('active');
-  const nb = document.getElementById(`nav-${name}`);
-  if (nb) nb.classList.add('active');
-  document.getElementById('page-title').textContent = SECTION_TITLES[name] || name;
-  currentSection = name;
-  closeSidebar();
-
-  const loaders = {
-    overview:      loadOverview,
-    leads:         () => loadLeads(0),
-    consultations: loadConsultations,
-    payments:      loadPayments,
-    broadcast:     loadBroadcasts,
-  };
+  const nb = document.getElementById(`nav-${name}`); if (nb) nb.classList.add('active');
+  document.getElementById('page-title').textContent = TITLES[name] || name;
+  currentSection = name; closeSidebar();
+  const loaders = { overview:loadOverview, leads:()=>loadLeads(0), registered:loadRegistered, payments:loadPayments, escalated:loadEscalated, broadcast:loadBroadcasts };
   if (loaders[name]) loaders[name]();
 };
-
 const refreshCurrent = () => {
-  const loaders = {
-    overview:      loadOverview,
-    leads:         () => loadLeads(leadsPage),
-    consultations: loadConsultations,
-    payments:      loadPayments,
-    broadcast:     loadBroadcasts,
-  };
+  const loaders = { overview:loadOverview, leads:()=>loadLeads(leadsPage), registered:loadRegistered, payments:loadPayments, escalated:loadEscalated, broadcast:loadBroadcasts };
   if (loaders[currentSection]) loaders[currentSection]();
 };
-
-const toggleSidebar = () => {
-  document.getElementById('sidebar').classList.toggle('open');
-  document.getElementById('sidebar-backdrop').classList.toggle('open');
-};
-const closeSidebar = () => {
-  document.getElementById('sidebar').classList.remove('open');
-  document.getElementById('sidebar-backdrop').classList.remove('open');
-};
-
+const toggleSidebar = () => { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('sidebar-backdrop').classList.toggle('open'); };
+const closeSidebar  = () => { document.getElementById('sidebar').classList.remove('open'); document.getElementById('sidebar-backdrop').classList.remove('open'); };
 const startClock = () => {
-  const tick = () => {
-    document.getElementById('clock').textContent =
-      new Date().toLocaleTimeString('en-NG', { timeZone: 'Africa/Lagos', hour: '2-digit', minute: '2-digit' }) + ' WAT';
-  };
-  tick();
-  setInterval(tick, 30000);
+  const tick = () => { document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-NG',{timeZone:'Africa/Lagos',hour:'2-digit',minute:'2-digit'})+' WAT'; };
+  tick(); setInterval(tick, 30000);
 };
 
-// ════════════════════════════════════════════════════════
-// OVERVIEW
-// ════════════════════════════════════════════════════════
-const loadOverview = () => Promise.all([loadStats(), loadRecentLeads(), loadPendingConsults()]);
+// ── OVERVIEW ──────────────────────────────────────────────
+const loadOverview = () => Promise.all([loadStats(), loadTodayLeads(), loadPendingAction()]);
 
 const loadStats = async () => {
   try {
     const d = await api('/admin/api/stats');
-    // Update escalation badge
-    const badgeEl = document.getElementById('badge-escalated');
-    if (d.escalations_pending > 0) {
-      badgeEl.textContent = d.escalations_pending;
-      badgeEl.style.display = 'inline';
-    } else {
-      badgeEl.style.display = 'none';
-    }
+    const role = sessionStorage.getItem('adminRole') || 'agent';
+
+    // Update badges
+    if (d.pending_action > 0) { document.getElementById('badge-pending').textContent = d.pending_action; document.getElementById('badge-pending').style.display = 'inline'; } else document.getElementById('badge-pending').style.display = 'none';
+    if (d.escalations > 0)    { document.getElementById('badge-escalated').textContent = d.escalations; document.getElementById('badge-escalated').style.display = 'inline'; } else document.getElementById('badge-escalated').style.display = 'none';
+    if (d.today_leads > 0)    { document.getElementById('badge-new').textContent = d.today_leads; document.getElementById('badge-new').style.display = 'inline'; } else document.getElementById('badge-new').style.display = 'none';
+
     document.getElementById('stats-grid').innerHTML = `
       <div class="stat-card">
-        <div class="stat-icon green">
-          <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-        </div>
-        <div class="stat-body">
-          <div class="stat-label">Total Leads</div>
-          <div class="stat-value">${d.total_leads}</div>
-          <div class="stat-sub">+${d.today_leads} today</div>
-        </div>
+        <div class="stat-icon green"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+        <div class="stat-body"><div class="stat-label">Total Leads</div><div class="stat-value">${d.total_leads}</div><div class="stat-sub">+${d.today_leads} today</div></div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon blue">
-          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        </div>
-        <div class="stat-body">
-          <div class="stat-label">Consultations</div>
-          <div class="stat-value">${d.total_consultations}</div>
-          <div class="stat-sub">Booked calls</div>
-        </div>
+        <div class="stat-icon blue"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+        <div class="stat-body"><div class="stat-label">Registered</div><div class="stat-value">${d.registered_leads}</div><div class="stat-sub">Paid registration</div></div>
       </div>
       <div class="stat-card">
-        <div class="stat-icon green">
-          <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-        </div>
-        <div class="stat-body">
-          <div class="stat-label">Revenue</div>
-          <div class="stat-value" style="font-size:16px">${d.revenue_formatted}</div>
-          <div class="stat-sub">${d.paid_leads} paid clients</div>
-        </div>
+        <div class="stat-icon orange"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+        <div class="stat-body"><div class="stat-label">Pending Action</div><div class="stat-value">${d.pending_action}</div><div class="stat-sub">Need follow-up</div></div>
       </div>
+      ${role === 'superadmin' || role === 'finance' ? `
       <div class="stat-card">
-        <div class="stat-icon ${d.escalations_pending > 0 ? 'red' : 'orange'}">
-          <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-        </div>
-        <div class="stat-body">
-          <div class="stat-label">Escalations</div>
-          <div class="stat-value">${d.escalations_pending}</div>
-          <div class="stat-sub">${d.escalations_pending > 0 ? 'Need attention' : 'All clear'}</div>
-        </div>
-      </div>
+        <div class="stat-icon green"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+        <div class="stat-body"><div class="stat-label">Revenue</div><div class="stat-value" style="font-size:16px">${d.revenue_formatted}</div><div class="stat-sub">Total confirmed</div></div>
+      </div>` : `
+      <div class="stat-card">
+        <div class="stat-icon red"><svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+        <div class="stat-body"><div class="stat-label">Escalations</div><div class="stat-value">${d.escalations}</div><div class="stat-sub">${d.escalations > 0 ? 'Need attention' : 'All clear'}</div></div>
+      </div>`}
     `;
-  } catch (e) {
-    console.error('Stats:', e.message);
-    document.getElementById('stats-grid').innerHTML =
-      `<div style="color:var(--danger);font-size:12px;padding:12px">Failed to load stats: ${e.message}</div>`;
-  }
+  } catch(e) { console.error('Stats:', e.message); }
 };
 
-const loadRecentLeads = async () => {
-  const tb = document.getElementById('tb-recent-leads');
+const loadTodayLeads = async () => {
+  const tb = document.getElementById('tb-today-leads');
   try {
-    const d = await api('/admin/api/leads?limit=6&sort=created_at&order=desc');
-    const rows = d.data || [];
-    if (!rows.length) {
-      tb.innerHTML = emptyRow(5, 'No leads yet');
-      return;
-    }
+    const now   = new Date();
+    const start = new Date(now.setHours(0,0,0,0)).toISOString();
+    const d     = await api(`/admin/api/leads?limit=8&sort=created_at&order=desc`);
+    const rows  = (d.data || []).slice(0, 8);
+    if (!rows.length) { tb.innerHTML = emptyRow(5, 'No leads yet today'); return; }
     tb.innerHTML = rows.map(l => `
       <tr onclick="openLead('${l.id}')">
         <td><strong>${l.phone_number}</strong></td>
         <td>${l.name || '<span style="color:var(--text-3)">—</span>'}</td>
         <td>${svcBadge(l.service_interested)}</td>
         <td>${stageBadge(l.conversation_stage)}</td>
-        <td>${ago(l.last_interaction)}</td>
+        <td>${ago(l.created_at)}</td>
       </tr>`).join('');
-  } catch (e) {
-    tb.innerHTML = errorRow(5, e.message);
-  }
+  } catch(e) { tb.innerHTML = errorRow(5, e.message); }
 };
 
-const loadPendingConsults = async () => {
-  const tb = document.getElementById('tb-pending-consults');
+const loadPendingAction = async () => {
+  const tb = document.getElementById('tb-pending-action');
   try {
-    const d = await api('/admin/api/consultations?status=pending');
-    if (!d.length) { tb.innerHTML = emptyRow(5, 'No pending consultations'); return; }
-    tb.innerHTML = d.slice(0, 5).map(c => `
-      <tr>
-        <td><strong>${c.client_name || '—'}</strong></td>
-        <td>${c.phone_number}</td>
-        <td>${c.service_topic || '—'}</td>
-        <td><span class="badge bg-blue">${c.preferred_time || '—'}</span></td>
-        <td>
-          <div class="table-actions" onclick="event.stopPropagation()">
-            <button class="btn btn-success btn-sm" onclick="doneConsult('${c.id}')">${ic.check} Done</button>
-            <button class="btn btn-secondary btn-sm" onclick="prefillDM('${c.phone_number}')">${ic.msg}</button>
+    const d = await api('/admin/api/leads?payment=paid&limit=8&sort=updated_at&order=desc');
+    const rows = (d.data || []).filter(l => !['completed','lost'].includes(l.lead_status)).slice(0, 8);
+    if (!rows.length) { tb.innerHTML = emptyRow(4, 'No pending leads'); return; }
+    tb.innerHTML = rows.map(l => `
+      <tr onclick="openLead('${l.id}')">
+        <td><strong>${l.name || l.phone_number}</strong></td>
+        <td>${svcBadge(l.service_interested)}</td>
+        <td>${statusBadge(l.lead_status)}</td>
+        <td onclick="event.stopPropagation()">
+          <div class="table-actions">
+            <button class="btn btn-success btn-sm" onclick="quickStatus('${l.id}','contacted')" title="Mark Contacted">${ic.check}</button>
+            <button class="btn btn-secondary btn-sm" onclick="prefillDM('${l.phone_number}')" title="Message">${ic.msg}</button>
           </div>
         </td>
       </tr>`).join('');
-  } catch (e) {
-    tb.innerHTML = errorRow(5, e.message);
-  }
+  } catch(e) { tb.innerHTML = errorRow(4, e.message); }
 };
 
-// ════════════════════════════════════════════════════════
-// LEADS
-// ════════════════════════════════════════════════════════
+// ── LEADS ─────────────────────────────────────────────────
 const loadLeads = async (page = 0) => {
   leadsPage = page;
   const tb = document.getElementById('tb-leads');
-  tb.innerHTML = `<tr><td colspan="9"><div class="loading-state"><div class="spinner"></div>Loading leads...</div></td></tr>`;
+  tb.innerHTML = `<tr><td colspan="8"><div class="loading-state"><div class="spinner"></div>Loading...</div></td></tr>`;
   try {
     const p = new URLSearchParams({ limit: PER_PAGE, offset: page * PER_PAGE, ...leadsFilters });
     const d = await api(`/admin/api/leads?${p}`);
-    const rows  = d.data || [];
-    const total = d.total || rows.length;
-
+    const rows = d.data || [], total = d.total || rows.length;
     document.getElementById('leads-count-label').textContent = `${total} leads`;
-
-    if (!rows.length) { tb.innerHTML = emptyRow(9, 'No leads match your filters'); renderPagination(0, 0); return; }
-
+    if (!rows.length) { tb.innerHTML = emptyRow(8, 'No leads found'); renderPg(total, page); return; }
     tb.innerHTML = rows.map(l => `
       <tr onclick="openLead('${l.id}')">
         <td><strong>${l.phone_number}</strong></td>
         <td>${l.name || '<span style="color:var(--text-3)">—</span>'}</td>
         <td>${svcBadge(l.service_interested)}</td>
-        <td>${l.destination_country || '<span style="color:var(--text-3)">—</span>'}</td>
-        <td>${stageBadge(l.conversation_stage)}</td>
+        <td>${channelBadge(l.phone_number)}</td>
         <td>${payBadge(l.payment_status)}</td>
-        <td>${l.consultation_booked
-          ? `<span class="badge bg-green">${ic.check} Yes</span>`
-          : `<span class="badge bg-gray">No</span>`}</td>
+        <td>${statusBadge(l.lead_status)}</td>
         <td>${ago(l.last_interaction)}</td>
         <td onclick="event.stopPropagation()">
           <div class="table-actions">
@@ -1357,44 +972,34 @@ const loadLeads = async (page = 0) => {
           </div>
         </td>
       </tr>`).join('');
-
-    renderPagination(total, page);
-  } catch (e) {
-    tb.innerHTML = errorRow(9, e.message);
-  }
+    renderPg(total, page);
+  } catch(e) { tb.innerHTML = errorRow(8, e.message); }
 };
 
 const applyFilters = () => {
   leadsFilters = {};
-  const s = document.getElementById('lead-search').value.trim();
+  const s  = document.getElementById('lead-search').value.trim();
   const sv = document.getElementById('f-service').value;
-  const st = document.getElementById('f-stage').value;
+  const st = document.getElementById('f-lead-status').value;
   const py = document.getElementById('f-payment').value;
-  const ct = document.getElementById('f-country').value;
-  if (s)  leadsFilters.search  = s;
-  if (sv) leadsFilters.service = sv;
-  if (st) leadsFilters.stage   = st;
-  if (py) leadsFilters.payment = py;
-  if (ct) leadsFilters.country = ct;
+  const src= document.getElementById('f-source').value;
+  if (s)   leadsFilters.search  = s;
+  if (sv)  leadsFilters.service = sv;
+  if (st)  leadsFilters.status  = st;
+  if (py)  leadsFilters.payment = py;
+  if (src) leadsFilters.source  = src;
   loadLeads(0);
 };
-
 const clearFilters = () => {
-  ['lead-search','f-service','f-stage','f-payment','f-country']
-    .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
-  leadsFilters = {};
-  loadLeads(0);
+  ['lead-search','f-service','f-lead-status','f-payment','f-source']
+    .forEach(id => { const el = document.getElementById(id); if(el) el.value=''; });
+  leadsFilters = {}; loadLeads(0);
 };
-
-const renderPagination = (total, page) => {
+const renderPg = (total, page) => {
   const pages = Math.ceil(total / PER_PAGE);
-  document.getElementById('leads-pg-info').textContent =
-    total ? `${page * PER_PAGE + 1}–${Math.min((page + 1) * PER_PAGE, total)} of ${total}` : '0 results';
-
+  document.getElementById('leads-pg-info').textContent = total ? `${page*PER_PAGE+1}–${Math.min((page+1)*PER_PAGE,total)} of ${total}` : '0 results';
   let html = `<button class="pg-btn" onclick="loadLeads(${page-1})" ${page===0?'disabled':''}>&#8249;</button>`;
-  for (let i = Math.max(0, page-2); i < Math.min(pages, page+3); i++) {
-    html += `<button class="pg-btn ${i===page?'active':''}" onclick="loadLeads(${i})">${i+1}</button>`;
-  }
+  for (let i = Math.max(0,page-2); i < Math.min(pages,page+3); i++) html += `<button class="pg-btn ${i===page?'active':''}" onclick="loadLeads(${i})">${i+1}</button>`;
   html += `<button class="pg-btn" onclick="loadLeads(${page+1})" ${page>=pages-1?'disabled':''}>&#8250;</button>`;
   document.getElementById('leads-pg-btns').innerHTML = html;
 };
@@ -1403,172 +1008,390 @@ const exportLeads = async () => {
   try {
     const p = new URLSearchParams({ limit: 5000, ...leadsFilters });
     const d = await api(`/admin/api/leads?${p}`);
-    const rows  = d.data || [];
+    const rows = d.data || [];
     if (!rows.length) { toast('No leads to export', 'error'); return; }
-    const cols  = ['phone_number','name','email','service_interested','destination_country','program_level','timeline','payment_status','consultation_booked','created_at'];
-    const csv   = [cols.join(','), ...rows.map(r => cols.map(c => `"${r[c] ?? ''}"`).join(','))].join('\n');
-    const blob  = new Blob([csv], { type: 'text/csv' });
-    const url   = URL.createObjectURL(blob);
-    const a     = document.createElement('a');
+    const cols = ['phone_number','name','email','service_interested','destination_country','payment_status','lead_status','source','created_at'];
+    const csv  = [cols.join(','), ...rows.map(r => cols.map(c => `"${r[c]??''}"`).join(','))].join('\n');
+    const blob = new Blob([csv], { type:'text/csv' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
     a.href = url; a.download = `applyboard_leads_${Date.now()}.csv`;
     a.click(); URL.revokeObjectURL(url);
-    toast('Leads exported successfully', 'success');
-  } catch (e) { toast('Export failed: ' + e.message, 'error'); }
+    toast('Exported successfully', 'success');
+  } catch(e) { toast('Export failed: '+e.message, 'error'); }
 };
 
-// ════════════════════════════════════════════════════════
-// LEAD MODAL
-// ════════════════════════════════════════════════════════
+// ── REGISTERED LEADS ──────────────────────────────────────
+const loadRegistered = async () => {
+  const tb = document.getElementById('tb-registered');
+  tb.innerHTML = `<tr><td colspan="8"><div class="loading-state"><div class="spinner"></div></div></td></tr>`;
+  try {
+    const params = new URLSearchParams({ payment: 'paid', limit: 100, sort: 'updated_at', order: 'desc' });
+    if (registeredFilter) params.set('status', registeredFilter);
+    const d    = await api(`/admin/api/leads?${params}`);
+    const rows = d.data || [];
+    document.getElementById('reg-count-label').textContent = `${rows.length} clients`;
+    if (!rows.length) { tb.innerHTML = emptyRow(8, 'No registered leads'); return; }
+    tb.innerHTML = rows.map(l => `
+      <tr onclick="openLead('${l.id}')">
+        <td><strong>${l.name || '—'}</strong></td>
+        <td>${l.phone_number}</td>
+        <td>${svcBadge(l.service_interested)}</td>
+        <td>${l.destination_country || '—'}</td>
+        <td><span style="font-size:12px;color:var(--text-2)">${l.agent_assigned || '—'}</span></td>
+        <td>${statusBadge(l.lead_status)}</td>
+        <td>${ago(l.updated_at)}</td>
+        <td onclick="event.stopPropagation()">
+          <div class="table-actions">
+            <button class="btn btn-success btn-sm" onclick="quickStatus('${l.id}','contacted')" title="Mark Contacted">${ic.check} Contacted</button>
+            <button class="btn btn-secondary btn-sm" onclick="prefillDM('${l.phone_number}')">${ic.msg}</button>
+            <button class="btn-icon" onclick="openLead('${l.id}')">${ic.edit}</button>
+          </div>
+        </td>
+      </tr>`).join('');
+  } catch(e) { tb.innerHTML = errorRow(8, e.message); }
+};
+
+const setPipeline = (status) => {
+  registeredFilter = status;
+  document.querySelectorAll('.pipe-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent.toLowerCase().replace(' ','_') === (status || 'all'));
+  });
+  loadRegistered();
+};
+
+const quickStatus = async (id, status, event) => {
+  if (event) event.stopPropagation();
+  try {
+    await api(`/admin/api/leads/${id}/status`, { method:'PUT', body: JSON.stringify({ status }) });
+    toast(`Marked as ${status}`, 'success');
+    refreshCurrent();
+  } catch(e) { toast(e.message, 'error'); }
+};
+
+// ── LEAD MODAL ────────────────────────────────────────────
 const openLead = async (id) => {
   currentLeadId = id;
   document.getElementById('modal-lead').classList.add('open');
   document.getElementById('modal-lead-body').innerHTML =
     `<div class="loading-state"><div class="spinner spinner-lg"></div>Loading...</div>`;
-
   try {
     const d = await api(`/admin/api/leads/${id}`);
     const l = d.lead;
     document.getElementById('modal-lead-title').textContent = l.name || l.phone_number;
-
     document.getElementById('modal-lead-body').innerHTML = `
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--border)">
-        <div style="width:42px;height:42px;border-radius:50%;background:var(--primary-light);color:var(--primary);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:16px;flex-shrink:0">
-          ${(l.name || l.phone_number)[0].toUpperCase()}
+        <div style="width:44px;height:44px;border-radius:50%;background:var(--primary-light);color:var(--primary);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:18px;flex-shrink:0">
+          ${(l.name||l.phone_number)[0].toUpperCase()}
         </div>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:15px">${l.name||'Unknown'}</div>
+          <div style="color:var(--text-3);font-size:12px">${l.phone_number} ${l.email?'· '+l.email:''}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          ${stageBadge(l.conversation_stage)}
+          ${statusBadge(l.lead_status)}
+          ${payBadge(l.payment_status)}
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;padding:12px;background:var(--surface-2);border-radius:var(--radius)">
+        <span style="font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;align-self:center;margin-right:4px">Quick Actions:</span>
+        <button class="btn btn-sm btn-secondary" onclick="quickStatus('${l.id}','contacted',event)">Mark Contacted</button>
+        <button class="btn btn-sm btn-secondary" onclick="quickStatus('${l.id}','in_progress',event)">In Progress</button>
+        <button class="btn btn-sm btn-success"   onclick="quickStatus('${l.id}','completed',event)">Completed</button>
+        <button class="btn btn-sm btn-danger"    onclick="quickStatus('${l.id}','lost',event)">Lost</button>
+        <button class="btn btn-sm btn-secondary" onclick="prefillDM('${l.phone_number}');closeModal('modal-lead')">${ic.msg} Message</button>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
         <div>
-          <div style="font-weight:700;font-size:15px">${l.name || 'Unknown'}</div>
-          <div style="color:var(--text-3);font-size:12px">${l.phone_number} ${l.email ? '· ' + l.email : ''}</div>
-        </div>
-        <div style="margin-left:auto">${stageBadge(l.conversation_stage)}</div>
-      </div>
+          <div class="divider">Edit Details</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Name</label>
+              <input class="form-control" id="e-name" value="${l.name||''}">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Email</label>
+              <input class="form-control" id="e-email" value="${l.email||''}">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Service</label>
+              <select class="form-control" id="e-service">
+                <option value="">Select...</option>
+                ${['study_abroad','visa','test_prep','loan','travel','pilgrimage','pof'].map(s=>`<option value="${s}" ${l.service_interested===s?'selected':''}>${s.replace('_',' ')}</option>`).join('')}
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Destination</label>
+              <input class="form-control" id="e-country" value="${l.destination_country||''}">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Pipeline Status</label>
+              <select class="form-control" id="e-lead-status">
+                ${['new','contacted','in_progress','completed','lost'].map(s=>`<option value="${s}" ${l.lead_status===s?'selected':''}>${s.replace('_',' ')}</option>`).join('')}
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Agent Assigned</label>
+              <input class="form-control" id="e-agent" value="${l.agent_assigned||''}">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Notes</label>
+            <textarea class="form-control" id="e-notes">${l.notes||''}</textarea>
+          </div>
 
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Full Name</label>
-          <input class="form-control" id="e-name" value="${l.name || ''}">
+          <div class="divider">Profile</div>
+          <div class="detail-grid">
+            <div class="detail-item"><label>Source</label><span>${channelBadge(l.phone_number)}</span></div>
+            <div class="detail-item"><label>Payment</label><span>${payBadge(l.payment_status)}</span></div>
+            <div class="detail-item"><label>Loan Interest</label><span>${l.loan_interest?'Yes':'No'}</span></div>
+            <div class="detail-item"><label>Escalated</label><span>${l.is_escalated?'Yes':'No'}</span></div>
+            <div class="detail-item"><label>Created</label><span>${fmtDate(l.created_at)}</span></div>
+            <div class="detail-item"><label>Last Seen</label><span>${ago(l.last_interaction)}</span></div>
+          </div>
         </div>
-        <div class="form-group">
-          <label class="form-label">Email</label>
-          <input class="form-control" id="e-email" value="${l.email || ''}">
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Service Interested</label>
-          <select class="form-control" id="e-service">
-            <option value="">Select...</option>
-            ${['study_abroad','visa','test_prep','loan','travel','pilgrimage','pof','insurance']
-              .map(s => `<option value="${s}" ${l.service_interested===s?'selected':''}>${s.replace('_',' ')}</option>`).join('')}
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Conversation Stage</label>
-          <select class="form-control" id="e-stage">
-            ${['greeting','qualified','consultation_booked','paid','escalated','processing']
-              .map(s => `<option value="${s}" ${l.conversation_stage===s?'selected':''}>${s.replace('_',' ')}</option>`).join('')}
-          </select>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Destination</label>
-          <input class="form-control" id="e-country" value="${l.destination_country || ''}">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Program Level</label>
-          <input class="form-control" id="e-level" value="${l.program_level || ''}">
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Agent Assigned</label>
-          <input class="form-control" id="e-agent" value="${l.agent_assigned || ''}">
-        </div>
-        <div class="form-group">
-          <label class="form-label">Payment Status</label>
-          <select class="form-control" id="e-payment">
-            ${['none','pending','paid','failed'].map(s => `<option value="${s}" ${l.payment_status===s?'selected':''}>${s}</option>`).join('')}
-          </select>
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">Notes</label>
-        <textarea class="form-control" id="e-notes">${l.notes || ''}</textarea>
-      </div>
 
-      <div class="divider">Profile Summary</div>
-      <div class="detail-grid">
-        <div class="detail-item"><label>Loan Interest</label><span>${l.loan_interest ? 'Yes' : 'No'}</span></div>
-        <div class="detail-item"><label>Escalated</label><span>${l.is_escalated ? '⚠ Yes' : 'No'}</span></div>
-        <div class="detail-item"><label>Consultation Booked</label><span>${l.consultation_booked ? 'Yes' : 'No'}</span></div>
-        <div class="detail-item"><label>Source</label><span>${l.source || 'whatsapp'}</span></div>
-        <div class="detail-item"><label>Created</label><span>${fmtDate(l.created_at)}</span></div>
-        <div class="detail-item"><label>Last Seen</label><span>${ago(l.last_interaction)}</span></div>
-      </div>
+        <div>
+          ${d.conversations?.length ? `
+            <div class="divider">Conversation (${d.conversations.length} messages)</div>
+            <div class="conv-scroll">
+              ${d.conversations.map(c=>`
+                <div class="conv-msg ${c.direction}">
+                  <div>${c.content||c.message_type||'—'}</div>
+                  <div class="conv-msg-meta">${c.direction} · ${fmtDate(c.created_at)}</div>
+                </div>`).join('')}
+            </div>` : ''}
 
-      ${d.conversations?.length ? `
-        <div class="divider">Conversation History (${d.conversations.length})</div>
-        <div class="conv-scroll">
-          ${d.conversations.map(c => `
-            <div class="conv-msg ${c.direction}">
-              <div>${c.content || c.message_type || '—'}</div>
-              <div class="conv-msg-meta">${c.direction} · ${fmtDate(c.created_at)}</div>
-            </div>`).join('')}
-        </div>` : ''}
+          ${d.payments?.length ? `
+            <div class="divider">Payments</div>
+            ${d.payments.map(p=>`
+              <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px">
+                <span><strong>₦${Number(p.amount).toLocaleString('en-NG')}</strong> · ${p.service_desc||'—'}</span>
+                <span>${payBadge(p.status)}</span>
+              </div>`).join('')}` : ''}
 
-      <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">
-        <button class="btn btn-secondary btn-sm" onclick="prefillDM('${l.phone_number}');closeModal('modal-lead')">
-          ${ic.msg} Send Message
-        </button>
-        ${l.is_escalated ? `<button class="btn btn-success btn-sm" onclick="clearEscalation('${l.id}')">
-          ${ic.check} Clear Escalation</button>` : ''}
+          <div class="divider">Activity Log</div>
+          <div id="activity-log-${l.id}">
+            <div style="font-size:12px;color:var(--text-3)">Loading activity...</div>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:10px">
+            <input class="form-control" id="new-note-${l.id}" placeholder="Add a note..." style="font-size:12px">
+            <button class="btn btn-secondary btn-sm" onclick="addNote('${l.id}')">Add</button>
+          </div>
+        </div>
       </div>
     `;
-  } catch (e) {
+    // Load activity log
+    loadActivity(l.id);
+  } catch(e) {
     document.getElementById('modal-lead-body').innerHTML =
       `<div style="color:var(--danger);padding:16px;font-size:13px">${e.message}</div>`;
   }
+};
+
+const loadActivity = async (id) => {
+  try {
+    const d  = await api(`/admin/api/leads/${id}/activity`);
+    const el = document.getElementById(`activity-log-${id}`);
+    if (!el) return;
+    if (!d.length) { el.innerHTML = `<div style="font-size:12px;color:var(--text-3)">No activity yet</div>`; return; }
+    el.innerHTML = d.map(a => `
+      <div class="activity-item">
+        <div class="activity-dot"></div>
+        <div class="activity-content">
+          <div class="activity-action">${a.action}</div>
+          ${a.note ? `<div class="activity-note">${a.note}</div>` : ''}
+          <div class="activity-meta">${a.done_by} · ${ago(a.created_at)}</div>
+        </div>
+      </div>`).join('');
+  } catch(e) { console.error('Activity:', e.message); }
+};
+
+const addNote = async (id) => {
+  const input = document.getElementById(`new-note-${id}`);
+  const note  = input?.value?.trim();
+  if (!note) return;
+  try {
+    await api(`/admin/api/leads/${id}/note`, { method:'POST', body: JSON.stringify({ note }) });
+    input.value = '';
+    toast('Note added', 'success');
+    loadActivity(id);
+  } catch(e) { toast(e.message, 'error'); }
 };
 
 const saveLead = async () => {
   if (!currentLeadId) return;
   try {
     await api(`/admin/api/leads/${currentLeadId}`, {
-      method: 'PUT',
-      body:   JSON.stringify({
-        name:               document.getElementById('e-name')?.value || null,
-        email:              document.getElementById('e-email')?.value || null,
+      method:'PUT',
+      body: JSON.stringify({
+        name:               document.getElementById('e-name')?.value    || null,
+        email:              document.getElementById('e-email')?.value   || null,
         service_interested: document.getElementById('e-service')?.value || null,
-        conversation_stage: document.getElementById('e-stage')?.value || null,
-        destination_country: document.getElementById('e-country')?.value || null,
-        program_level:      document.getElementById('e-level')?.value || null,
-        agent_assigned:     document.getElementById('e-agent')?.value || null,
-        payment_status:     document.getElementById('e-payment')?.value || null,
-        notes:              document.getElementById('e-notes')?.value || null,
+        destination_country:document.getElementById('e-country')?.value || null,
+        agent_assigned:     document.getElementById('e-agent')?.value   || null,
+        lead_status:        document.getElementById('e-lead-status')?.value || null,
+        notes:              document.getElementById('e-notes')?.value   || null,
       }),
     });
     toast('Lead updated', 'success');
     closeModal('modal-lead');
-    if (currentSection === 'leads') loadLeads(leadsPage);
-    if (currentSection === 'overview') loadOverview();
-  } catch (e) { toast(e.message, 'error'); }
+    refreshCurrent();
+  } catch(e) { toast(e.message, 'error'); }
 };
 
-const clearEscalation = async (id) => {
+// ── ESCALATIONS ───────────────────────────────────────────
+const loadEscalated = async () => {
+  const tb = document.getElementById('tb-escalated');
+  tb.innerHTML = `<tr><td colspan="6"><div class="loading-state"><div class="spinner"></div></div></td></tr>`;
   try {
-    await api(`/admin/api/leads/${id}`, {
-      method: 'PUT',
-      body:   JSON.stringify({ is_escalated: false, conversation_stage: 'qualified' }),
-    });
-    toast('Escalation cleared', 'success');
-    closeModal('modal-lead');
-    loadStats();
-  } catch (e) { toast(e.message, 'error'); }
+    const d    = await api('/admin/api/leads?escalated=true&limit=50');
+    const rows = d.data || [];
+    if (!rows.length) { tb.innerHTML = emptyRow(6, 'No escalations'); return; }
+    tb.innerHTML = rows.map(l => `
+      <tr onclick="openLead('${l.id}')">
+        <td><strong>${l.phone_number}</strong></td>
+        <td>${l.name||'—'}</td>
+        <td>${svcBadge(l.service_interested)}</td>
+        <td>${stageBadge(l.conversation_stage)}</td>
+        <td>${ago(l.last_interaction)}</td>
+        <td onclick="event.stopPropagation()">
+          <div class="table-actions">
+            <button class="btn btn-success btn-sm" onclick="clearEsc('${l.id}',event)">${ic.check} Clear</button>
+            <button class="btn btn-secondary btn-sm" onclick="prefillDM('${l.phone_number}',event)">${ic.msg}</button>
+          </div>
+        </td>
+      </tr>`).join('');
+  } catch(e) { tb.innerHTML = errorRow(6, e.message); }
 };
 
-// ════════════════════════════════════════════════════════
-// CSV IMPORT
-// ════════════════════════════════════════════════════════
+const clearEsc = async (id, event) => {
+  if (event) event.stopPropagation();
+  try {
+    await api(`/admin/api/leads/${id}`, { method:'PUT', body: JSON.stringify({ is_escalated:false, conversation_stage:'qualified' }) });
+    toast('Escalation cleared', 'success');
+    loadEscalated(); loadStats();
+  } catch(e) { toast(e.message, 'error'); }
+};
+
+// ── PAYMENTS ──────────────────────────────────────────────
+const loadPayments = async () => {
+  const tb = document.getElementById('tb-payments');
+  tb.innerHTML = `<tr><td colspan="8"><div class="loading-state"><div class="spinner"></div></div></td></tr>`;
+  try {
+    const status = document.getElementById('f-pay-status').value;
+    const d      = await api(`/admin/api/payments${status?'?status='+status:''}`);
+    const rev    = d.filter(p=>p.status==='success').reduce((s,p)=>s+Number(p.amount),0);
+    document.getElementById('revenue-total').textContent = `Total: ₦${rev.toLocaleString('en-NG')}`;
+    if (!d.length) { tb.innerHTML = emptyRow(8, 'No payments yet'); return; }
+    tb.innerHTML = d.map(p => `
+      <tr>
+        <td><code style="font-size:11px;color:var(--primary)">${(p.reference||'').slice(0,16)}...</code></td>
+        <td>${p.leads?.name||'—'}</td>
+        <td>${p.phone_number}</td>
+        <td><strong>₦${Number(p.amount).toLocaleString('en-NG')}</strong></td>
+        <td>${p.service_desc||'—'}</td>
+        <td>${payBadge(p.status)}</td>
+        <td>${fmtDate(p.created_at)}</td>
+        <td>
+          ${p.status==='pending'?`<button class="btn btn-success btn-sm" onclick="confirmPay('${p.id}')">${ic.check} Confirm</button>`:'—'}
+        </td>
+      </tr>`).join('');
+  } catch(e) { tb.innerHTML = errorRow(8, e.message); }
+};
+
+const confirmPay = async (id) => {
+  if (!confirm('Confirm this payment?')) return;
+  try {
+    await api(`/admin/api/payments/${id}/confirm`, { method:'PUT' });
+    toast('Payment confirmed', 'success');
+    loadPayments(); loadStats();
+  } catch(e) { toast(e.message, 'error'); }
+};
+
+// ── BROADCASTS ────────────────────────────────────────────
+const loadBroadcasts = async () => {
+  const tb = document.getElementById('tb-broadcasts');
+  try {
+    const d = await api('/admin/api/broadcasts');
+    if (!d.length) { tb.innerHTML = emptyRow(5, 'No broadcasts yet'); return; }
+    tb.innerHTML = d.map(b => `
+      <tr>
+        <td><strong>${b.title}</strong></td>
+        <td>${b.sent_count||0}</td>
+        <td>${b.failed_count||0}</td>
+        <td>${bcBadge(b.status)}</td>
+        <td>${fmtDate(b.created_at)}</td>
+      </tr>`).join('');
+  } catch(e) { console.error(e); }
+};
+
+const previewCount = async () => {
+  try {
+    const filter = {};
+    const svc = document.getElementById('bc-service').value;
+    const src = document.getElementById('bc-source').value;
+    if (svc) filter.service = svc;
+    if (src) filter.source  = src;
+    const d = await api('/admin/api/broadcasts/preview', { method:'POST', body: JSON.stringify({ filter }) });
+    document.getElementById('bc-count').textContent = d.count;
+    document.getElementById('bc-preview-pill').style.display = 'inline-flex';
+  } catch(e) { toast(e.message,'error'); }
+};
+
+const sendBroadcast = async () => {
+  const msg   = document.getElementById('bc-message').value.trim();
+  const title = document.getElementById('bc-title').value.trim();
+  if (!msg) { toast('Please write a message','error'); return; }
+  const count = document.getElementById('bc-count').textContent;
+  if (!confirm(`Send to ${count} contacts?`)) return;
+  const btn = document.getElementById('bc-btn');
+  btn.disabled = true; btn.textContent = 'Sending...';
+  try {
+    const filter = {};
+    const svc = document.getElementById('bc-service').value;
+    const src = document.getElementById('bc-source').value;
+    if (svc) filter.service = svc;
+    if (src) filter.source  = src;
+    await api('/admin/api/broadcasts', { method:'POST', body: JSON.stringify({ message:msg, title:title||undefined, filter }) });
+    toast('Broadcast started!','success');
+    document.getElementById('bc-message').value = '';
+    document.getElementById('bc-title').value   = '';
+    document.getElementById('bc-preview-pill').style.display = 'none';
+    loadBroadcasts();
+  } catch(e) { toast(e.message,'error'); } finally {
+    btn.disabled = false;
+    btn.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Send Broadcast`;
+  }
+};
+
+// ── DIRECT MESSAGE ────────────────────────────────────────
+const prefillDM = (phone, event) => {
+  if (event) event.stopPropagation();
+  showSection('message');
+  document.getElementById('dm-phone').value = phone;
+  document.getElementById('dm-message').focus();
+};
+const sendDM = async () => {
+  const phone = document.getElementById('dm-phone').value.trim();
+  const msg   = document.getElementById('dm-message').value.trim();
+  if (!phone||!msg) { toast('Phone and message required','error'); return; }
+  try {
+    await api('/admin/api/message', { method:'POST', body: JSON.stringify({ phone, message:msg }) });
+    toast('Message sent','success');
+    document.getElementById('dm-message').value = '';
+  } catch(e) { toast(e.message,'error'); }
+};
+
+// ── CSV IMPORT ────────────────────────────────────────────
 const openImportModal = () => {
   csvRows = [];
   document.getElementById('import-btn').disabled = true;
@@ -1576,43 +1399,34 @@ const openImportModal = () => {
   document.getElementById('csv-file').value = '';
   document.getElementById('modal-import').classList.add('open');
 };
-
 const downloadTemplate = () => {
-  const csv = `phone,name,email,service,destination,level\n+2348012345678,John Doe,john@email.com,study_abroad,Canada,Postgraduate\n+2348098765432,Amina Yusuf,,visa,United Kingdom,\n+2347011223344,Chidi Obi,chidi@co.com,test_prep,,`;
-  const blob = new Blob([csv], { type: 'text/csv' });
+  const csv  = `phone,name,email,service,destination,level\n+2348012345678,John Doe,john@email.com,study_abroad,Canada,Postgraduate\n+2348098765432,Amina Yusuf,,visa,United Kingdom,`;
+  const blob = new Blob([csv],{type:'text/csv'});
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
-  a.href = url; a.download = 'applyboard_leads_template.csv';
-  a.click(); URL.revokeObjectURL(url);
+  a.href = url; a.download = 'applyboard_leads_template.csv'; a.click();
+  URL.revokeObjectURL(url);
 };
-
 const handleDrop = (e) => {
   e.preventDefault();
   document.getElementById('upload-zone').classList.remove('drag-over');
   const file = e.dataTransfer.files[0];
   if (file) parseCSV(file);
 };
-
-const handleFileSelect = (input) => {
-  const file = input.files[0];
-  if (file) parseCSV(file);
-};
-
+const handleFileSelect = (input) => { const file = input.files[0]; if (file) parseCSV(file); };
 const parseCSV = (file) => {
   const reader = new FileReader();
   reader.onload = (e) => {
     const lines  = e.target.result.trim().split('\n');
     const header = lines[0].split(',').map(h => h.trim().toLowerCase());
     csvRows = lines.slice(1).map(line => {
-      const vals = line.split(',');
-      const obj  = {};
-      header.forEach((h, i) => { obj[h] = (vals[i] || '').trim().replace(/^"|"$/g, ''); });
+      const vals = line.split(','), obj = {};
+      header.forEach((h,i) => { obj[h] = (vals[i]||'').trim().replace(/^"|"$/g,''); });
       return obj;
     }).filter(r => r.phone || r.phone_number);
-
     const status = document.getElementById('import-status');
     if (!csvRows.length) {
-      status.innerHTML = `<span style="color:var(--danger)">No valid rows found. Check your CSV format.</span>`;
+      status.innerHTML = `<span style="color:var(--danger)">No valid rows found.</span>`;
       document.getElementById('import-btn').disabled = true;
     } else {
       status.innerHTML = `<span style="color:var(--success)">✓ ${csvRows.length} leads ready to import</span>`;
@@ -1621,288 +1435,91 @@ const parseCSV = (file) => {
   };
   reader.readAsText(file);
 };
-
 const doImport = async () => {
   if (!csvRows.length) return;
   const btn = document.getElementById('import-btn');
-  btn.disabled    = true;
-  btn.textContent = 'Importing...';
+  btn.disabled = true; btn.textContent = 'Importing...';
   try {
-    const d = await api('/admin/api/leads/import', {
-      method: 'POST',
-      body:   JSON.stringify({ leads: csvRows }),
-    });
-    toast(`${d.imported} leads imported successfully`, 'success');
+    const d = await api('/admin/api/leads/import', { method:'POST', body: JSON.stringify({ leads:csvRows }) });
+    toast(`${d.imported} leads imported`,'success');
     closeModal('modal-import');
-    if (currentSection === 'leads') loadLeads(0);
-  } catch (e) {
-    toast('Import failed: ' + e.message, 'error');
-  } finally {
-    btn.disabled    = false;
-    btn.textContent = 'Import Leads';
+    if (currentSection==='leads') loadLeads(0);
+  } catch(e) { toast('Import failed: '+e.message,'error'); } finally {
+    btn.disabled = false; btn.textContent = 'Import Leads';
   }
 };
 
-// ════════════════════════════════════════════════════════
-// CONSULTATIONS
-// ════════════════════════════════════════════════════════
-const loadConsultations = async () => {
-  const tb = document.getElementById('tb-consultations');
-  tb.innerHTML = `<tr><td colspan="7"><div class="loading-state"><div class="spinner"></div></div></td></tr>`;
-  try {
-    const status = document.getElementById('f-consult-status').value;
-    const date   = document.getElementById('f-consult-date').value;
-    const p      = new URLSearchParams();
-    if (status) p.set('status', status);
-    if (date)   p.set('date', date);
-    const d = await api(`/admin/api/consultations?${p}`);
-    if (!d.length) { tb.innerHTML = emptyRow(7, 'No consultations found'); return; }
-    tb.innerHTML = d.map(c => `
-      <tr>
-        <td><strong>${c.client_name || '—'}</strong></td>
-        <td>${c.phone_number}</td>
-        <td>${c.service_topic || '—'}</td>
-        <td><span class="badge bg-blue">${c.preferred_time || '—'}</span></td>
-        <td>${consultBadge(c.status)}</td>
-        <td>${fmtDate(c.created_at)}</td>
-        <td>
-          <div class="table-actions">
-            ${c.status === 'pending' || c.status === 'confirmed' ? `
-              <button class="btn btn-success btn-sm" onclick="doneConsult('${c.id}')">${ic.check} Done</button>` : ''}
-            <button class="btn btn-secondary btn-sm" onclick="prefillDM('${c.phone_number}')">${ic.msg}</button>
-          </div>
-        </td>
-      </tr>`).join('');
-  } catch (e) { tb.innerHTML = errorRow(7, e.message); }
-};
-
-const doneConsult = async (id) => {
-  try {
-    await api(`/admin/api/consultations/${id}`, {
-      method: 'PUT', body: JSON.stringify({ status: 'completed' }),
-    });
-    toast('Consultation marked complete', 'success');
-    loadConsultations(); loadStats();
-  } catch (e) { toast(e.message, 'error'); }
-};
-
-// ════════════════════════════════════════════════════════
-// PAYMENTS
-// ════════════════════════════════════════════════════════
-const loadPayments = async () => {
-  const tb = document.getElementById('tb-payments');
-  tb.innerHTML = `<tr><td colspan="9"><div class="loading-state"><div class="spinner"></div></div></td></tr>`;
-  try {
-    const status = document.getElementById('f-pay-status').value;
-    const d = await api(`/admin/api/payments${status ? '?status=' + status : ''}`);
-    const rev = d.filter(p => p.status === 'success').reduce((s, p) => s + Number(p.amount), 0);
-    document.getElementById('revenue-total').textContent =
-      `Total Revenue: ₦${rev.toLocaleString('en-NG')}`;
-    if (!d.length) { tb.innerHTML = emptyRow(9, 'No payments yet'); return; }
-    tb.innerHTML = d.map(p => `
-      <tr>
-        <td><code style="font-size:11px;color:var(--primary)">${(p.reference||'').slice(0,18)}...</code></td>
-        <td>${p.leads?.name || '—'}</td>
-        <td>${p.phone_number}</td>
-        <td><strong>₦${Number(p.amount).toLocaleString('en-NG')}</strong></td>
-        <td>${p.service_desc || '—'}</td>
-        <td><span class="badge bg-gray">${p.method || '—'}</span></td>
-        <td>${payBadge(p.status)}</td>
-        <td>${fmtDate(p.created_at)}</td>
-        <td>
-          ${p.status === 'pending' && p.method === 'bank_transfer' ? `
-            <button class="btn btn-success btn-sm" onclick="confirmPay('${p.id}')">${ic.check} Confirm</button>` : '—'}
-        </td>
-      </tr>`).join('');
-  } catch (e) { tb.innerHTML = errorRow(9, e.message); }
-};
-
-const confirmPay = async (id) => {
-  if (!confirm('Confirm this bank transfer?')) return;
-  try {
-    await api(`/admin/api/payments/${id}/confirm`, { method: 'PUT' });
-    toast('Payment confirmed — client notified', 'success');
-    loadPayments(); loadStats();
-  } catch (e) { toast(e.message, 'error'); }
-};
-
-// ════════════════════════════════════════════════════════
-// BROADCAST
-// ════════════════════════════════════════════════════════
-const loadBroadcasts = async () => {
-  const tb = document.getElementById('tb-broadcasts');
-  try {
-    const d = await api('/admin/api/broadcasts');
-    if (!d.length) { tb.innerHTML = emptyRow(5, 'No broadcasts sent yet'); return; }
-    tb.innerHTML = d.map(b => `
-      <tr>
-        <td><strong>${b.title}</strong></td>
-        <td>${b.sent_count || 0}</td>
-        <td>${b.failed_count || 0}</td>
-        <td>${bcBadge(b.status)}</td>
-        <td>${fmtDate(b.created_at)}</td>
-      </tr>`).join('');
-  } catch (e) { tb.innerHTML = errorRow(5, e.message); }
-};
-
-const previewCount = async () => {
-  try {
-    const filter = {};
-    const svc = document.getElementById('bc-service').value;
-    const cty = document.getElementById('bc-country').value;
-    if (svc) filter.service = svc;
-    if (cty) filter.country = cty;
-    const d = await api('/admin/api/broadcasts/preview', {
-      method: 'POST', body: JSON.stringify({ filter }),
-    });
-    document.getElementById('bc-count').textContent = d.count;
-    document.getElementById('bc-preview-pill').style.display = 'inline-flex';
-  } catch (e) { toast(e.message, 'error'); }
-};
-
-const sendBroadcast = async () => {
-  const msg   = document.getElementById('bc-message').value.trim();
-  const title = document.getElementById('bc-title').value.trim();
-  if (!msg) { toast('Please write a message', 'error'); return; }
-
-  const count = document.getElementById('bc-count').textContent;
-  if (!confirm(`Send to ${count} contacts?`)) return;
-
-  const btn = document.getElementById('bc-btn');
-  btn.disabled    = true;
-  btn.textContent = 'Sending...';
-
-  try {
-    const filter = {};
-    const svc = document.getElementById('bc-service').value;
-    const cty = document.getElementById('bc-country').value;
-    if (svc) filter.service = svc;
-    if (cty) filter.country = cty;
-    await api('/admin/api/broadcasts', {
-      method: 'POST',
-      body:   JSON.stringify({ message: msg, title: title || undefined, filter }),
-    });
-    toast('Broadcast started!', 'success');
-    document.getElementById('bc-message').value = '';
-    document.getElementById('bc-title').value   = '';
-    document.getElementById('bc-preview-pill').style.display = 'none';
-    loadBroadcasts();
-  } catch (e) { toast(e.message, 'error'); } finally {
-    btn.disabled    = false;
-    btn.innerHTML   = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Send Broadcast`;
-  }
-};
-
-// ════════════════════════════════════════════════════════
-// DIRECT MESSAGE
-// ════════════════════════════════════════════════════════
-const prefillDM = (phone) => {
-  showSection('message');
-  document.getElementById('dm-phone').value = phone;
-  document.getElementById('dm-message').focus();
-};
-
-const sendDM = async () => {
-  const phone = document.getElementById('dm-phone').value.trim();
-  const msg   = document.getElementById('dm-message').value.trim();
-  if (!phone || !msg) { toast('Phone and message required', 'error'); return; }
-  try {
-    await api('/admin/api/message', { method: 'POST', body: JSON.stringify({ phone, message: msg }) });
-    toast('Message sent', 'success');
-    document.getElementById('dm-message').value = '';
-  } catch (e) { toast(e.message, 'error'); }
-};
-
-// ════════════════════════════════════════════════════════
-// MODALS
-// ════════════════════════════════════════════════════════
+// ── MODALS ────────────────────────────────────────────────
 const closeModal = (id) => document.getElementById(id).classList.remove('open');
 document.querySelectorAll('.modal-backdrop').forEach(el => {
-  el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
+  el.addEventListener('click', e => { if (e.target===el) el.classList.remove('open'); });
 });
 
-// ════════════════════════════════════════════════════════
-// TOASTS
-// ════════════════════════════════════════════════════════
-const toast = (msg, type = 'info') => {
+// ── TOASTS ────────────────────────────────────────────────
+const toast = (msg, type='info') => {
   const c  = document.getElementById('toasts');
   const el = document.createElement('div');
-  const icons = {
-    success: `<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>`,
-    error:   `<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
-    info:    `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
-  };
+  const icons = { success:`<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>`, error:`<svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`, info:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>` };
   el.className = `toast toast-${type}`;
-  el.innerHTML = (icons[type] || '') + msg;
+  el.innerHTML = (icons[type]||'') + msg;
   c.appendChild(el);
   setTimeout(() => el.remove(), 4000);
 };
 
-// ════════════════════════════════════════════════════════
-// BADGE HELPERS
-// ════════════════════════════════════════════════════════
+// ── BADGES ────────────────────────────────────────────────
 const svcBadge = (s) => {
-  const m = { study_abroad:['bg-blue','Study Abroad'], visa:['bg-purple','Visa'], test_prep:['bg-green','Test Prep'], loan:['bg-yellow','Loan'], travel:['bg-blue','Travel'], pilgrimage:['bg-gray','Pilgrimage'], pof:['bg-gray','PoF'], insurance:['bg-green','Insurance'] };
-  const [c,l] = m[s] || ['bg-gray', s||'—'];
-  return `<span class="badge ${c}"><span class="badge-dot" style="background:currentColor;opacity:0.5"></span>${l}</span>`;
+  const m = { study_abroad:['bg-blue','Study Abroad'], visa:['bg-purple','Visa'], test_prep:['bg-green','Test Prep'], loan:['bg-yellow','Loan'], travel:['bg-blue','Travel'], pilgrimage:['bg-gray','Pilgrimage'], pof:['bg-gray','PoF'] };
+  const [c,l] = m[s]||['bg-gray',s||'—'];
+  return `<span class="badge ${c}">${l}</span>`;
 };
 const stageBadge = (s) => {
-  const m = { greeting:['bg-gray','Greeting'], main_menu:['bg-gray','Browsing'], qualified:['bg-blue','Qualified'], consultation_booked:['bg-green','Booked'], paid:['bg-green','Paid'], escalated:['bg-red','Escalated'], processing:['bg-purple','Processing'] };
-  const [c,l] = m[s] || ['bg-gray', s||'—'];
+  const m = { greeting:['bg-gray','Greeting'], qualified:['bg-blue','Qualified'], registered:['bg-green','Registered'], paid:['bg-green','Paid'], escalated:['bg-red','Escalated'], free_text_ai:['bg-gray','Chatting'] };
+  const [c,l] = m[s]||['bg-gray',s||'—'];
+  return `<span class="badge ${c}">${l}</span>`;
+};
+const statusBadge = (s) => {
+  const m = { new:['bg-blue','New'], contacted:['bg-teal','Contacted'], in_progress:['bg-yellow','In Progress'], completed:['bg-green','Completed'], lost:['bg-red','Lost'] };
+  const [c,l] = m[s||'new']||['bg-gray','New'];
   return `<span class="badge ${c}">${l}</span>`;
 };
 const payBadge = (s) => {
   const m = { none:['bg-gray','None'], pending:['bg-yellow','Pending'], paid:['bg-green','Paid'], failed:['bg-red','Failed'] };
-  const [c,l] = m[s||'none'] || ['bg-gray','—'];
+  const [c,l] = m[s||'none']||['bg-gray','—'];
   return `<span class="badge ${c}">${l}</span>`;
 };
-const consultBadge = (s) => {
-  const m = { pending:['bg-yellow','Pending'], confirmed:['bg-blue','Confirmed'], completed:['bg-green','Completed'], cancelled:['bg-red','Cancelled'] };
-  const [c,l] = m[s] || ['bg-gray','—'];
-  return `<span class="badge ${c}">${l}</span>`;
+const channelBadge = (phone) => {
+  if (!phone) return '<span class="badge bg-gray">—</span>';
+  return phone.startsWith('tg_')
+    ? '<span class="badge bg-blue">Telegram</span>'
+    : '<span class="badge bg-green">WhatsApp</span>';
 };
 const bcBadge = (s) => {
   const m = { pending:['bg-yellow','Pending'], sending:['bg-blue','Sending'], completed:['bg-green','Completed'], failed:['bg-red','Failed'] };
-  const [c,l] = m[s] || ['bg-gray','—'];
+  const [c,l] = m[s]||['bg-gray','—'];
   return `<span class="badge ${c}">${l}</span>`;
 };
 
-// ════════════════════════════════════════════════════════
-// DATE / TIME HELPERS
-// ════════════════════════════════════════════════════════
+// ── DATES ─────────────────────────────────────────────────
 const ago = (iso) => {
   if (!iso) return '—';
   const diff = Date.now() - new Date(iso).getTime();
-  const m = Math.floor(diff / 60000);
+  const m = Math.floor(diff/60000);
   if (m < 1)  return 'Just now';
   if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
+  const h = Math.floor(m/60);
   if (h < 24) return `${h}h ago`;
-  const d = Math.floor(h / 24);
+  const d = Math.floor(h/24);
   if (d < 7)  return `${d}d ago`;
   return fmtDate(iso);
 };
 const fmtDate = (iso) => {
   if (!iso) return '—';
-  return new Date(iso).toLocaleString('en-NG', { timeZone: 'Africa/Lagos', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+  return new Date(iso).toLocaleString('en-NG',{timeZone:'Africa/Lagos',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
 };
 
-// ════════════════════════════════════════════════════════
-// TABLE HELPERS
-// ════════════════════════════════════════════════════════
-const emptyRow = (cols, msg) => `
-  <tr><td colspan="${cols}">
-    <div class="empty-state">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-      <p>${msg}</p>
-    </div>
-  </td></tr>`;
-const errorRow = (cols, msg) => `
-  <tr><td colspan="${cols}">
-    <div style="padding:16px;color:var(--danger);font-size:13px;text-align:center">
-      Error loading data: ${msg}
-    </div>
-  </td></tr>`;
+// ── TABLE HELPERS ─────────────────────────────────────────
+const emptyRow = (cols, msg) => `<tr><td colspan="${cols}"><div class="empty-state"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg><p>${msg}</p></div></td></tr>`;
+const errorRow = (cols, msg) => `<tr><td colspan="${cols}"><div style="padding:16px;color:var(--danger);font-size:13px;text-align:center">Error: ${msg}</div></td></tr>`;
 </script>
 </body>
 </html>

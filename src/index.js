@@ -126,6 +126,22 @@ app.post('/payment/webhook', async (req, res) => {
   }
 });
 
+// ── Paystack callback (redirect after payment) ────────────
+app.get('/payment/callback', (req, res) => {
+  const { reference } = req.query;
+  // Just show a success page — webhook handles the actual confirmation
+  res.send(`
+    <html>
+      <head><title>Payment Processing</title></head>
+      <body style="font-family:Arial;text-align:center;padding:60px">
+        <h2>Payment Received</h2>
+        <p>Your payment is being confirmed. You will receive a message on WhatsApp/Telegram shortly.</p>
+        <p>Reference: <strong>${reference}</strong></p>
+      </body>
+    </html>
+  `);
+});
+
 // ── Admin dashboard ───────────────────────────────────────
 const dashboardRoutes = require('./admin/dashboardRoutes');
 app.use('/admin', dashboardRoutes);
