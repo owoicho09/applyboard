@@ -1,0 +1,160 @@
+commit 04b191348debe4cd8d8ed3ea0a25c46feaf94a06 226 
+commit 5343750dfc43644704bc0ba3e3438490caa88d5d 230 
+commit fc3f88f05f1a9a912a9107ba49abe35e7532eaca 228 
+commit 30c4f38924cb016a0369ae147227a3f9c7ec650d 227 
+commit 64c8d6b2ff26a1a536548c344b6683c813f914c8 226 
+commit a79b57e8fb32647de72023f6bddfeaeb4ddaccf7 222 
+commit 85273fc2969f70056bed52302662d23cc9f8bdcc 227 
+commit 38279173aac9553349a342e6f04ef5bda312f993 223 
+commit d937c59dbec1e4fbf2aff3721244a557619ecc9a 224 
+commit 33ef63fe19beabcf79d9f3de6ad90862bb208e8e 183 
+tree 5e881f44487971302919737d90feff2b274d7142 485 
+blob 932cf81f1239d0659448daa59a45b84c10ea3804 698 .env.example
+blob 4149e6a4b7bbd9bfbaec3741d1a6dca7381db976 282 .gitignore
+tree 9980ca7b385593770636ac1885129f791492543b 239 .idea
+blob 26d33521af10bcc7fd8cea344038eaaeb78d0ef5 47 .idea/.gitignore
+blob d0876a78d06ac03b5d78c8dcdb95570281c6f1d6 284 .idea/applyboard-bot.iml
+tree 97824ec9b0149e48c91dce4fee530335b327c686 49 .idea/inspectionProfiles
+blob 105ce2da2d6447d11dfe32bfb846c3d5b199fc99 174 .idea/inspectionProfiles/profiles_settings.xml
+blob 9de286525ff35cf3ec9f171ef56fd1557939f2a0 278 .idea/misc.xml
+blob 9931d2abbb556adff67e472643c4c28c8cf437f5 280 .idea/modules.xml
+blob 35eb1ddfbbc029bcab630581847471d7f238ec53 167 .idea/vcs.xml
+blob e69de29bb2d1d6434b8b29ae775ad8c2e48c5391 0 README.md
+blob 1eb7d2e9093ede1bc4626404db9388d827350b19 187775 applyboardafrica_db.sql
+blob 5948d8489827b61f3f33ba1115bd38b8684c3bbe 363203718 backup.zip
+tree 8b0f606db9c4c75e44a7f6d9374ba0cd210b9ac1 41 docs
+blob 831cb63d48911557d87defb272a94250a4eae93a 2112 docs/file-tree.txt
+blob fa09675cfed5b41b6cb960bfec8f19e202e6f377 32563016 ngrok.exe
+blob 03a689071d377cc7f9c2f1d5e80cb28708f34c02 249551 package-lock.json
+blob 69553475721d0e848e65bedc93a6f132bfda7bed 1782 package.json
+tree 2a83df6b93adf51e561fef61a32c3ee92570beaa 125 scripts
+tree be5bf2a737d3b82f44036d03d612db9fd39e33ae 303 src
+tree 6e5361302667ce42e1cfec4014a628af09e6a3e9 132 src/admin
+blob b72588f4172b11f8c85f0883ff1f1ff98031b75b 86096 src/admin/dashboard.html
+blob 7463766477421f0ad9f116330fc96ae55dc818ff 2624 src/admin/dashboardAuth.js
+blob 7b5ee145ab773af0135c97153c32e98f2b434edb 16162 src/admin/dashboardRoutes.js
+tree 786c5d312fae588c8177ca4f014f62bb21c0d187 152 src/config
+blob 1fbedc9d15af24141706bfd0a407f174b5b008a8 11297 src/config/constants.js
+blob 2103f18ed61d3c5245a3f0b2955c4ff2020f5cc5 1002 src/config/database.js
+blob c56e6e59352bd09e12a029f52c712c6428c17e6e 825 src/config/logger.js
+blob f6464b65f8323b9dc99c4c80da7fdc1a61de67ae 1046 src/config/redis.js
+tree b2c553ccc3b3434c815000eca8fb19c63a59a544 246 src/data
+blob 25b1f8b6de3aecf10a22da6f31097030d140c6d4 4094 src/data/batches.js
+blob 76b9c1c0c8160010ebe0c423f04cad859a4e74b0 2537 src/data/countries.js
+blob 27fc10f34abf13bbf3dc46be668a0863c96617b4 4563 src/data/loanPackages.js
+blob 4e391c34cc9d05c20a8882326dd498324a4ded4e 1940 src/data/pricingGuide.js
+blob e68bcd609c365ea4c56040fe626db51ea3129ca3 3339 src/data/services.js
+blob e70a83b8d2773df155b7df1e7173d94966c71d2f 1537 src/data/testimonials.js
+tree dbf503cd080dca0f5c7e72fad9c4fc888f5ab1da 501 src/flows
+blob 93fd8e9ce332efb109e0da4fd3b2c5e0ce06fa13 2755 src/flows/consultation.js
+blob a12ebf089c4a49e09bb7c56d788900478c2dda22 1062 src/flows/escalation.js
+blob 629eb0979dec45989c5ab2f7a2475680acc8429c 551 src/flows/greeting.js
+blob f3b60dd232747d40fe05f2724ba6d698dc230dd5 3518 src/flows/loanScholarship.js
+blob 903005b6cffa82d056d40ebf30039ced47a2b33f 1696 src/flows/mainMenu.js
+blob dffafb210a42864373b417d9ad76569a530371ac 3887 src/flows/payment.js
+blob e122f1287464976734da51294613cb96af7d7bda 3392 src/flows/pilgrimage.js
+blob 23bafb17a8dba5b6e9116e3591c60f7e6cf92774 1612 src/flows/proofOfFunds.js
+blob 037f8c6a59b70428b67f9d52f4d81c22b5ae2ccd 5166 src/flows/studyAbroad.js
+blob 68f418f1392961752e1ba2931b46cba757e93ee4 5243 src/flows/testPrep.js
+blob 49d72fdcc324882428c0094e3cbb458bc50c8496 2693 src/flows/travelServices.js
+blob de8e12a969e8f74e0c9fbeb995cbdb3293bf8eda 4051 src/flows/visaProcessing.js
+tree 7e7234ebb3198c6f1ed8f3e8eec7285a9315dc7e 220 src/handlers
+blob d37924ff0ff4a898bcb54dd001a36ff2753b1bbd 7130 src/handlers/buttonHandler.js
+blob a611c64f84481e9bfe906d77b6e76f75a75500e8 378 src/handlers/mediaHandler.js
+blob 7d141538bf10a2dbe7d4ef9b4e332ef08867b444 2226 src/handlers/messageHandler.js
+blob b86a20a2a6698ffe915e239c0af635bcf8806816 3221 src/handlers/telegramHandler.js
+blob c36526e309b8ae98cff9ab1fffd4a079b8f005fb 6168 src/handlers/textHandler.js
+blob e211a5dddcbb68638e6ba0afdadadb1897668575 6411 src/index.js
+tree eb8323221513db72b995c1050c8cdaf98dd48626 174 src/middleware
+blob 357bacf1ce186f3406445378439b44cc5aea9202 539 src/middleware/authMiddleware.js
+blob 5146ca980639be1fe076dbf7ed8f32c869bfbde9 496 src/middleware/errorHandler.js
+blob 754bdb1f07f38521bf3efc513ac2c783e8818ea2 693 src/middleware/rateLimiter.js
+blob d8cd7cf0117730e032b0a331a25d9ccd3c560159 557 src/middleware/webhookVerify.js
+tree f306ada3adb26c487be5a2591ed8188ed4560869 322 src/services
+blob cc7cec63e232e29585a070b2a80d68eb662c6fdd 11877 src/services/ai.js
+blob 74744952c1ca83f0936221d269eeabfad3259a56 1628 src/services/broadcast.js
+blob dfbe8003fe0aff8cb043be39f5b6dd1b45f6c3f2 1895 src/services/leadService.js
+blob 18dcb8f65ee3f6b0028e447bcb3edd6460ca174e 1778 src/services/messenger.js
+blob d5132c7479213f202006d35c0d884139cd271007 5180 src/services/notificationService.js
+blob ee6044e165968f38168641c53c6f622e9f3a5a0f 2034 src/services/paystack.js
+blob a72699441a0449ca639df4b3f5b6ecc0a39dd903 4563 src/services/telegram.js
+blob 2ef1cf321f16c1dc69d22657fe7e37c7c9798fe7 2317 src/services/whatsapp.js
+tree 56bc64c52b4f12294a901895fc020b931176d60f 209 src/utils
+blob 727a2b8cb8d9bf970a096593f4587211cd1cc3ca 2104 src/utils/helpers.js
+blob 3d3654c257fa4b2a9b2342abe2f2fb3a2c96c2fc 3703 src/utils/messageTemplates.js
+blob ce677a384cb409cfc4935c452794acc792dd4be8 2367 src/utils/stateManager.js
+blob 05c85edd1ea106a9b22673d5e59923b17233d89e 1555 src/utils/validators.js
+tree 552705552ca3b2dbc7df0a350147e0c9aee1ba0c 99 tests
+tree 00261515eeefed21c9cc0a45b2212e3bd206567b 187 tests/e2e
+tree 72353ff602e3cc17de1d3be2e9d0ba3bc98890f7 130 tests/integration
+tree d815bc54d167e9269726f46e3c446cc181971a5a 137 tests/unit
+tree ff35f81b1c3c66b7ba4e342bfddd13e13a708ebc 396 
+tree c8ebe1325324c9a54c91cb0b0c230886a4369590 303 src
+tree 5ed30a4b57ace135765cb875a0325df6d21545ca 152 src/config
+blob 111ea07cf0b60520157e2d4acbffa62ba65ce1ff 8733 src/config/constants.js
+tree 6d19c9fa77eeab3bf411a40ac511c774f7402548 246 src/data
+blob 33299665149736ca0be5beea1ec40c593ee4511f 4563 src/data/loanPackages.js
+tree 844638a4617da188514aa3aaf9e66eb9d9e9fe90 501 src/flows
+blob e18b41e97a53cd88ed74c9d107aeb40a8b09376d 3464 src/flows/consultation.js
+blob 27257d5d59b45651b9ecf6a4cb07523b4bb7eb11 1287 src/flows/escalation.js
+blob e4959da50117bee5399e896900df7526460c6b8f 976 src/flows/greeting.js
+blob cd0ecd0a66eb23fc9b3f914575a607c7f5b7fa2c 4346 src/flows/payment.js
+blob 17054f4b1544437620aa35ccc9f69ad88dd6227a 4853 src/flows/testPrep.js
+tree a336d10d1b0dd100b5a4a4dfea610884e9485e0c 322 src/services
+blob 00e4fea6f54f530b17abb035ce65ee60f77572f7 8183 src/services/ai.js
+blob 96b25e49df92722a1e4bd0019631da20b4d2d2e5 1318 src/services/notificationService.js
+blob e9ee563a6e7f568e1acc57dda7a3f1667180d5a8 2309 src/services/paystack.js
+blob 0c214f3f0cfe57ca1f6b111432aff97b711408df 4562 src/services/telegram.js
+tree d6cbe2ecb3185881a5b11e216448c63b7a3df636 396 
+tree c19a75c0cc79d1f70aca825ec7110f6dca47f1c3 303 src
+tree a33156e3c41b31165e1b2a0568ac6907b806c611 132 src/admin
+blob c87dc8e84ed37f87d90825418b25401cb759e9dd 86097 src/admin/dashboard.html
+tree 60a042e71cff5498c8738f0729c3a3e89ea38dc4 396 
+blob 03da2a4ca36aaa13ba41255f21fb9a47ea3caa68 249174 package-lock.json
+blob 4f7eb921c04eb03793f1625dd8d75c8352f00898 1756 package.json
+tree 06a93c681626cfbf56a8bc235b182db6b8c6aa40 303 src
+tree 9feedaa82ce16e17ff97c36b3e1ace9c078b627e 132 src/admin
+blob c5fb8dfc72fc1fb93d484c1bf9b591f522ee0c99 85407 src/admin/dashboard.html
+blob 9fb5512d453fb97216a4f38f4d37898e5b0aebd3 1450 src/admin/dashboardAuth.js
+blob eb17f0b0c0571a395d2e75bc2045cb147054b00d 13245 src/admin/dashboardRoutes.js
+tree c2f2631ad64ff47b0a86286143d5decb2d59a1c7 396 
+tree 9c9183ef13a3d704b0bb941356e2599bf768aee6 303 src
+tree b687029928d9b6c131d78502ee3c8ec9e8b39ac4 501 src/flows
+blob 4b70251f128b0da4b40fcf6829a3a642933d409c 3462 src/flows/consultation.js
+blob 0a3411259ec0b7d206345e25851ee3432d87871d 1285 src/flows/escalation.js
+blob 8ba8e07b57fd86aeb2ba6b3b16fddb497127e581 973 src/flows/greeting.js
+blob ac0fe06380f5615839b882f526ea84491cddd7c5 3516 src/flows/loanScholarship.js
+blob d4dd158781362d45883a3838904c69d754bd5fdf 1694 src/flows/mainMenu.js
+blob d09c986577dfaab362fadea169fc8ddf3d49f635 4344 src/flows/payment.js
+blob 34773206039a03e5a581132d60985d6bb3a26574 3390 src/flows/pilgrimage.js
+blob 3d8b532d6e430b1d6900eec606b4a5f93ac2759a 1610 src/flows/proofOfFunds.js
+blob b2ad62dd43e1f9d62112a93e057cbeab0ef170e3 5164 src/flows/studyAbroad.js
+blob 61bf424ab89af46455e4e14ece1ec2e2c6773537 4851 src/flows/testPrep.js
+blob a97ca44b4892160e5280308f748824ed394a8a27 2691 src/flows/travelServices.js
+blob ce8abc1a16bdec10e86dc4557e3694a1e830b9cd 4049 src/flows/visaProcessing.js
+tree df9f71e26c1f86a119d2da26de6fb4bec28dc05b 174 src/handlers
+blob 5c6ac915790c55e636d826702ffc7f0f19e85eb2 376 src/handlers/mediaHandler.js
+blob 175c642824876d42e64ad6c69aeba1e36fd8cfb5 6166 src/handlers/textHandler.js
+blob 31fd5011322db9160ab60ab6b464709383ada8c9 5501 src/index.js
+tree 06122884f0548237925f8247209ae1be97844b96 243 src/services
+tree 6a8a2d466f7d5797621927fe7a95e7ad6b8b8f3b 396 
+tree 31846796f4f4b68bfccb57eea6add0531eb7303e 303 src
+tree 1e5b17d4138da793546995e4ea4aabd154d07881 174 src/handlers
+blob 2daf02c0e620daae1a3ebdb61a214413f2e72091 2211 src/handlers/messageHandler.js
+tree 06f3a2b2de299ab6c8638bf129f6d93c58500c9d 243 src/services
+blob 92404bc869a19470b1445761dc8d9d6369b12322 3212 src/services/whatsapp.js
+tree 5d1f3edfc1b2c70e128efa53291073e0b7bd93e8 396 
+tree c3ad56363577d09b0585632cf7a72e107a322ac4 303 src
+tree 0b5aae7fc3b0274d186c1cf79dc136e180b641a0 174 src/middleware
+blob 65d04bc02072ee90cc13cf84039c8dd1308f7ce5 770 src/middleware/webhookVerify.js
+tree 552e25603328e024bfa0c44089d33abc252e59fe 396 
+tree 7d407673e98d0ace79f65563e6619c692783281e 303 src
+blob 5d743673b8d0176da0a19a50e3d1f7646be36e01 5038 src/index.js
+tree 1ec108cbde10b0ff48ed4ad640d561a6a2338482 396 
+tree 4cc30beef63456f191f2b3c7b9cc808736d1f42d 303 src
+tree b32ac6e23fb21cd991c58047a17c8d7734bae740 132 src/admin
+blob e672308143f589b1b762e4a98dbf264d6079d98b 13256 src/admin/dashboardRoutes.js
+tree c2a5d7017d3fab39431f0a1c64a0e01d4e6a13bf 396 
+tree 343ae25d66a399cfb06579ff1b2387fd9fd1ec86 303 src
+tree 635989238f172a167a1b4f4441be8e66f3b973fc 209 src/utils
+blob cf4571e344110ddcceb05e8142949e4167aa7f93 2068 src/utils/helpers.js
