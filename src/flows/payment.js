@@ -16,9 +16,8 @@ const handlePayment = async (from, action, state) => {
   if (action === 'REGISTRATION' || action === 'START' || action === BTN.PAY_NOW) {
     try {
       const { initializePayment } = require('../services/paystack');
-      const email     = state.data?.email
-                     || `${from.replace('tg_', '').replace('+', '')}@applyboard.temp`;
-
+      const email = state.data?.email
+           || `user${from.replace('tg_', '').replace('+', '')}@applyboardafrica.com`;
       const { url, reference } = await initializePayment(email, amount, {
         phone_number: from,
         service,
