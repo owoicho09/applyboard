@@ -64,22 +64,68 @@ const handleText = async (from, text, state, message) => {
 
   // ── 5. AI handles everything else ────────────────────
   // No buttons after AI response — conversation flows naturally
-  try {
-    const { askAI } = require('../services/ai');
+  // ── 5. AI handles everything else ────────────────────
+try {
+  const { askAI } = require('../services/ai');
 
-    // Silently capture signals from the message into the lead record
-    await detectAndSaveSignals(from, lower, state);
+  await detectAndSaveSignals(from, lower, state);
 
-    const aiReply = await askAI(from, clean, state);
-    return sendText(from, aiReply);
+  const aiReply = await askAI(from, clean, state);
+  await sendText(from, aiReply);
 
-  } catch (err) {
-    console.error('[TEXT] Error:', err.message);
-    return sendText(
-      from,
-      `Something went wrong on my end. Give me a moment and try again.`
-    );
+  // Detect if AI has indicated payment should happen now
+  // If AI says it's sending a link — actually send it
+  const paymentTriggers = [
+    'payment link',
+    'link is coming',
+    'send you the link',
+    'sending the link',
+    'link sent',
+    'pay now',
+    'proceed to payment',
+    'link coming through',
+    'get your payment',
+    'sending over',
+  ];
+
+  const aiLowerReply = aiReply.toLowerCase();
+  const shouldPay = paymentTriggers.some((t) => aiLowerReply.includes(t));
+
+  if (shouldPay && state.stage !== STAGES.PAYMENT_AWAITING) {
+    const { handlePayment } = require('../flows/payment');
+
+    // Determine amount based on service
+    const service = state.data?.service || state.data?.service_interested || '';
+    let amount = 10000; // Default registration fee
+
+    // Test prep uses class fee not registration fee
+    if (service.toLowerCase().includes('ielts'))    amount = 85000;
+    if (service.toLowerCase().includes('toefl'))    amount = 75000;
+    if (service.toLowerCase().includes('gre'))      amount = 90000;
+    if (service.toLowerCase().includes('gmat'))     amount = 95000;
+    if (service.toLowerCase().includes('sat'))      amount = 80000;
+    if (service.toLowerCase().includes('pte'))      amount = 70000;
+    if (service.toLowerCase().includes('duolingo')) amount = 45000;
+    if (service.toLowerCase().includes('german'))   amount = 120000;
+    if (service.toLowerCase().includes('french'))   amount = 100000;
+    if (service.toLowerCase().includes('japanese')) amount = 110000;
+
+    // Update state with amount before triggering payment
+    const { updateData } = require('../utils/stateManager');
+    await updateData(from, { payment_amount: amount, service: service || 'ApplyBoard Africa' });
+
+    // Reload state with updated amount
+    const freshState = await getState(from);
+    await handlePayment(from, 'REGISTRATION', freshState);
   }
+
+} catch (err) {
+  console.error('[TEXT] Error:', err.message);
+  return sendText(
+    from,
+    `Something went wrong on my end. Give me a moment and try again.`
+  );
+}
 };
 
 // ── Silently detect and save signals to CRM ───────────────
