@@ -11,17 +11,25 @@ const initializePayment = async (email, amountNaira, metadata = {}) => {
   const { generateReference } = require('../utils/helpers');
   const reference = generateReference();
 
-  const res = await axios.post(
-    `${PAYSTACK_BASE}/transaction/initialize`,
-    {
-      email,
-      amount:       amountNaira * 100, // Convert to kobo
-      reference,
-      metadata,
-      callback_url: `${process.env.BASE_URL}/payment/callback`,
-    },
-    { headers: headers() }
-  );
+const res = await axios.post(
+  `${PAYSTACK_BASE}/transaction/initialize`,
+  {
+    email,
+    amount:       amountNaira * 100,
+    reference,
+    metadata,
+    callback_url: `${process.env.BASE_URL}/payment/callback`,
+  },
+  { headers: headers() }
+).catch((err) => {
+  console.error('[PAYSTACK] Full error:', JSON.stringify(err.response?.data));
+  console.error('[PAYSTACK] Request body sent:', JSON.stringify({
+    email,
+    amount: amountNaira * 100,
+    reference,
+  }));
+  throw err;
+});
 
   return {
     url:       res.data.data.authorization_url,
