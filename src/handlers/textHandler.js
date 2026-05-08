@@ -4,7 +4,6 @@ const { STAGES, MESSAGES }   = require('../config/constants');
 const { sanitizeText }       = require('../utils/validators');
 const { updateLead }         = require('../services/leadService');
 
-// Hard triggers — always work regardless of conversation stage
 const HARD_TRIGGERS = {
   menu:  ['menu', 'main menu', 'home', 'restart', 'start over'],
   paid:  ['i have paid', 'i paid', 'payment done', 'transfer done', 'i sent the money', 'i made payment'],
@@ -14,30 +13,66 @@ const HARD_TRIGGERS = {
 const matchesHard = (text, keywords) =>
   keywords.some((kw) => text.toLowerCase().includes(kw.toLowerCase()));
 
+// Map exam keywords to amounts
+const EXAM_AMOUNTS = {
+  'ielts':    85000,
+  'toefl':    75000,
+  'gre':      90000,
+  'gmat':     95000,
+  'sat':      80000,
+  'pte':      70000,
+  'duolingo': 45000,
+  'german':   120000,
+  'french':   100000,
+  'japanese': 110000,
+};
+
+const getPaymentAmount = (state) => {
+  const service = (
+    state.data?.service ||
+    state.data?.service_interested ||
+    state.data?.exam ||
+    ''
+  ).toLowerCase();
+
+  // Check exam amounts first
+  for (const [key, amount] of Object.entries(EXAM_AMOUNTS)) {
+    if (service.includes(key)) return amount;
+  }
+
+  // Check exam stored separately
+  const exam = (state.data?.exam || '').toLowerCase();
+  for (const [key, amount] of Object.entries(EXAM_AMOUNTS)) {
+    if (exam.includes(key)) return amount;
+  }
+
+  // Default registration fee for everything else
+  return 10000;
+};
+
 const handleText = async (from, text, state, message) => {
   const clean = sanitizeText(text).trim();
   const lower = clean.toLowerCase();
 
   console.log(`[TEXT] from=${from} stage=${state.stage} text="${clean.slice(0, 80)}"`);
 
-  // ── 1. Numeric reply — resolve from last menu ─────────
+  // ── 1. Numeric reply ──────────────────────────────────
   if (/^\d+$/.test(clean) && state.data?.lastMenu?.length) {
     const num  = parseInt(clean, 10);
     const item = state.data.lastMenu.find((m) => m.number === num);
     if (item) {
-      console.log(`[TEXT] Numeric ${num} → btnId: ${item.id}`);
       const { handleButton } = require('./buttonHandler');
       return handleButton(from, item.id, state, message);
     }
   }
 
-  // ── 2. Waiting for name during registration ───────────
+  // ── 2. Waiting for name ───────────────────────────────
   if (state.stage === STAGES.CONSULT_NAME) {
     const { startConsultation } = require('../flows/consultation');
     return startConsultation(from, state, clean);
   }
 
-  // ── 3. Hard triggers — work anywhere in conversation ──
+  // ── 3. Hard triggers ──────────────────────────────────
   if (matchesHard(lower, HARD_TRIGGERS.menu)) {
     const { sendMainMenu } = require('../flows/mainMenu');
     return sendMainMenu(from);
@@ -55,116 +90,93 @@ const handleText = async (from, text, state, message) => {
     return escalate(from, state);
   }
 
-  // ── 4. First message — send greeting ─────────────────
+  // ── 4. First message ──────────────────────────────────
   if (state.stage === STAGES.GREETING || !state.stage) {
     const { sendGreeting } = require('../flows/greeting');
     await setState(from, STAGES.FREE_TEXT_AI);
     return sendGreeting(from, state.data?.name);
   }
 
-  // ── 5. AI handles everything else ────────────────────
-  // No buttons after AI response — conversation flows naturally
-  // ── 5. AI handles everything else ────────────────────
-try {
-  const { askAI } = require('../services/ai');
+  // ── 5. AI handles everything ──────────────────────────
+  try {
+    const { askAI } = require('../services/ai');
 
-  await detectAndSaveSignals(from, lower, state);
+    await detectAndSaveSignals(from, lower, state);
 
-  const aiReply = await askAI(from, clean, state);
-  await sendText(from, aiReply);
+    const aiReply = await askAI(from, clean, state);
 
-  // Detect if AI has indicated payment should happen now
-  // If AI says it's sending a link — actually send it
-  const paymentTriggers = [
-    'payment link',
-    'link is coming',
-    'send you the link',
-    'sending the link',
-    'link sent',
-    'pay now',
-    'proceed to payment',
-    'link coming through',
-    'get your payment',
-    'sending over',
-  ];
+    // Check if AI has flagged payment should be sent now
+    const shouldSendPayment = aiReply.includes('[[SEND_PAYMENT_LINK]]');
 
-  const aiLowerReply = aiReply.toLowerCase();
-  const shouldPay = paymentTriggers.some((t) => aiLowerReply.includes(t));
+    // Clean the tag from the message before sending to user
+    const cleanReply = aiReply.replace('[[SEND_PAYMENT_LINK]]', '').trim();
 
-  if (shouldPay && state.stage !== STAGES.PAYMENT_AWAITING) {
-    const { handlePayment } = require('../flows/payment');
+    // Send the AI message first
+    if (cleanReply) {
+      await sendText(from, cleanReply);
+    }
 
-    // Determine amount based on service
-    const service = state.data?.service || state.data?.service_interested || '';
-    let amount = 10000; // Default registration fee
+    // Then immediately send the payment link if flagged
+    if (shouldSendPayment && state.stage !== STAGES.PAYMENT_AWAITING) {
+      console.log('[PAYMENT TRIGGER] AI flagged payment — generating link...');
 
-    // Test prep uses class fee not registration fee
-    if (service.toLowerCase().includes('ielts'))    amount = 85000;
-    if (service.toLowerCase().includes('toefl'))    amount = 75000;
-    if (service.toLowerCase().includes('gre'))      amount = 90000;
-    if (service.toLowerCase().includes('gmat'))     amount = 95000;
-    if (service.toLowerCase().includes('sat'))      amount = 80000;
-    if (service.toLowerCase().includes('pte'))      amount = 70000;
-    if (service.toLowerCase().includes('duolingo')) amount = 45000;
-    if (service.toLowerCase().includes('german'))   amount = 120000;
-    if (service.toLowerCase().includes('french'))   amount = 100000;
-    if (service.toLowerCase().includes('japanese')) amount = 110000;
+      const { handlePayment } = require('../flows/payment');
+      const amount             = getPaymentAmount(state);
+      const { updateData }     = require('../utils/stateManager');
 
-    // Update state with amount before triggering payment
-    const { updateData } = require('../utils/stateManager');
-    await updateData(from, { payment_amount: amount, service: service || 'ApplyBoard Africa' });
+      // Save amount to state
+      await updateData(from, { payment_amount: amount });
 
-    // Reload state with updated amount
-    const freshState = await getState(from);
-    await handlePayment(from, 'REGISTRATION', freshState);
+      // Get fresh state with updated amount
+      const freshState = await getState(from);
+
+      // Fire payment immediately
+      await handlePayment(from, 'REGISTRATION', freshState);
+    }
+
+  } catch (err) {
+    console.error('[TEXT] Error:', err.message);
+    return sendText(
+      from,
+      `Something went wrong on my end. Give me a moment and try again.`
+    );
   }
-
-} catch (err) {
-  console.error('[TEXT] Error:', err.message);
-  return sendText(
-    from,
-    `Something went wrong on my end. Give me a moment and try again.`
-  );
-}
 };
 
-// ── Silently detect and save signals to CRM ───────────────
-// Runs in background — never crashes the main flow
 const detectAndSaveSignals = async (from, lower, state) => {
   try {
     const updates = {};
 
-    // Destination detection — expanded country list
     const destinations = {
-      'canada':        'Canada',
-      'uk':            'United Kingdom',
-      'united kingdom':'United Kingdom',
-      'england':       'United Kingdom',
-      'britain':       'United Kingdom',
-      'germany':       'Germany',
-      'usa':           'United States',
-      'america':       'United States',
-      'united states': 'United States',
-      'australia':     'Australia',
-      'ireland':       'Ireland',
-      'new zealand':   'New Zealand',
-      'brazil':        'Brazil',
-      'france':        'France',
-      'netherlands':   'Netherlands',
-      'italy':         'Italy',
-      'spain':         'Spain',
-      'portugal':      'Portugal',
-      'japan':         'Japan',
-      'malaysia':      'Malaysia',
-      'singapore':     'Singapore',
-      'dubai':         'UAE',
-      'uae':           'UAE',
-      'turkey':        'Turkey',
-      'south korea':   'South Korea',
-      'korea':         'South Korea',
-      'mexico':        'Mexico',
-      'argentina':     'Argentina',
-      'colombia':      'Colombia',
+      'canada':         'Canada',
+      'uk':             'United Kingdom',
+      'united kingdom': 'United Kingdom',
+      'england':        'United Kingdom',
+      'britain':        'United Kingdom',
+      'germany':        'Germany',
+      'usa':            'United States',
+      'america':        'United States',
+      'united states':  'United States',
+      'australia':      'Australia',
+      'ireland':        'Ireland',
+      'new zealand':    'New Zealand',
+      'brazil':         'Brazil',
+      'france':         'France',
+      'netherlands':    'Netherlands',
+      'italy':          'Italy',
+      'spain':          'Spain',
+      'portugal':       'Portugal',
+      'japan':          'Japan',
+      'malaysia':       'Malaysia',
+      'singapore':      'Singapore',
+      'dubai':          'UAE',
+      'uae':            'UAE',
+      'turkey':         'Turkey',
+      'south korea':    'South Korea',
+      'korea':          'South Korea',
+      'mexico':         'Mexico',
+      'argentina':      'Argentina',
+      'colombia':       'Colombia',
     };
 
     for (const [keyword, country] of Object.entries(destinations)) {
@@ -174,7 +186,6 @@ const detectAndSaveSignals = async (from, lower, state) => {
       }
     }
 
-    // Service interest detection
     if (
       (lower.includes('study') || lower.includes('university') ||
        lower.includes('school') || lower.includes('masters') ||
@@ -183,45 +194,41 @@ const detectAndSaveSignals = async (from, lower, state) => {
     ) {
       updates.service_interested = 'study_abroad';
     } else if (
-      (lower.includes('visa') || lower.includes('travel document') ||
-       lower.includes('embassy') || lower.includes('immigration')) &&
+      (lower.includes('visa') || lower.includes('embassy') ||
+       lower.includes('immigration')) &&
       !state.data?.service_interested
     ) {
       updates.service_interested = 'visa';
     } else if (
       (lower.includes('loan') || lower.includes('scholarship') ||
-       lower.includes('funding') || lower.includes('finance') ||
-       lower.includes('tuition')) &&
+       lower.includes('funding') || lower.includes('finance')) &&
       !state.data?.service_interested
     ) {
       updates.service_interested = 'loan';
       updates.loan_interest      = true;
     } else if (
       (lower.includes('ielts') || lower.includes('toefl') ||
-       lower.includes('gre') || lower.includes('gmat') ||
+       lower.includes('gre')   || lower.includes('gmat') ||
        lower.includes('test prep') || lower.includes('language class')) &&
       !state.data?.service_interested
     ) {
       updates.service_interested = 'test_prep';
-    } else if (
-      lower.includes('flight') || lower.includes('hotel') ||
-      lower.includes('travel') || lower.includes('ticket')
-    ) {
-      updates.service_interested = 'travel';
-    } else if (
-      lower.includes('hajj') || lower.includes('umrah') ||
-      lower.includes('pilgrimage')
-    ) {
-      updates.service_interested = 'pilgrimage';
     }
 
-    // Age detection — important for loan eligibility rules
+    // Detect and save exam type for correct amount calculation
+    for (const exam of Object.keys(EXAM_AMOUNTS)) {
+      if (lower.includes(exam) && !state.data?.exam) {
+        updates.exam = exam.toUpperCase();
+        break;
+      }
+    }
+
+    // Age detection
     const ageMatch = lower.match(/\b(1[89]|[2-5][0-9])\b/);
     if (ageMatch && !state.data?.age) {
       const age = parseInt(ageMatch[1]);
       if (age >= 18 && age <= 60) {
         updates.age = age;
-        // Flag loan restriction if above 32
         if (age > 32) {
           updates.notes = `Age ${age} — loan only eligible for Canada and USA`;
         }
@@ -230,16 +237,15 @@ const detectAndSaveSignals = async (from, lower, state) => {
 
     // Budget signals
     if (
-      lower.includes('no money') || lower.includes('can\'t afford') ||
-      lower.includes('expensive') || lower.includes('budget') ||
-      lower.includes('cheap') || lower.includes('affordable')
+      lower.includes('no money')    || lower.includes("can't afford") ||
+      lower.includes('expensive')   || lower.includes('budget') ||
+      lower.includes('cheap')       || lower.includes('affordable')
     ) {
       updates.budget_range = 'budget_sensitive';
     }
 
     if (Object.keys(updates).length > 0) {
       await updateLead(from, updates);
-      // Also update state data so AI has fresh context
       const { updateData } = require('../utils/stateManager');
       await updateData(from, updates);
     }
