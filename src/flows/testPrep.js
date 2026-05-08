@@ -104,20 +104,35 @@ const handleTestPrep = async (from, action, state) => {
   };
 
   if (BATCH_LABELS[action]) {
-    const batchLabel = BATCH_LABELS[action];
-    const exam       = state.data?.exam || 'Test Prep';
-    await updateData(from, { batch: batchLabel });
-    await updateLead(from, { conversation_stage: 'qualified' });
+  const batchLabel = BATCH_LABELS[action];
+  const exam       = state.data?.exam || 'Test Prep';
+  const batch      = getBatch(exam);
+  const fee        = batch?.fee || 'contact us for pricing';
 
-    await sendText(
-      from,
-      `✅ *Registration: ${exam} — ${batchLabel}*\n\n` +
-      `Next step: Book your FREE consultation to confirm your spot and get your study materials.\n\n` +
-      `⚡ *Limited seats available — secure yours now!*`
-    );
+  await updateData(from, {
+    batch:          batchLabel,
+    service:        `Test Prep — ${exam}`,
+    payment_amount: batch ? parseInt(batch.fee.replace(/[^0-9]/g, '')) : 85000,
+  });
+  await updateLead(from, {
+    conversation_stage: 'qualified',
+    service_interested: 'test_prep',
+  });
 
-    return startConsultation(from, state);
-  }
+  await sendText(
+    from,
+    `${batchLabel} it is.\n\nFee for ${exam}: ${fee}\n\nTo secure your spot, payment confirms your registration and our support team will reach out with your class schedule and materials.\n\nReady to pay?`
+  );
+
+  return sendButtons(
+    from,
+    'Choose payment method:',
+    [
+      { id: BTN.PAY_NOW,  title: 'Pay with Card' },
+      { id: BTN.PAY_BANK, title: 'Bank Transfer' },
+    ]
+  );
+}
 };
 
 module.exports = { handleTestPrep };

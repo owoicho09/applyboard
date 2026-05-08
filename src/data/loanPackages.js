@@ -54,7 +54,7 @@ const loanPackages = {
       {
         label:     'Option 1 — Vocational Program Loan (Fast Track)',
         bestFor:   'Diploma / PGD',
-        structure: 'Pay 20% → Loan covers 80%',
+        structure: 'Pay 30% → Loan covers 70%',
         fields:    'Engineering, Healthcare, Hospitality, Business, etc.',
         note:      'Study gap must not exceed 5 years',
       },

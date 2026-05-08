@@ -14,7 +14,7 @@ const call = async (method, data) => {
     console.error(`[TELEGRAM] ${method} error:`, err.response?.data || err.message);
     throw err;
   }
-};
+}; 
 
 // ── Send plain text ───────────────────────────────────────
 const sendText = async (chatId, text) => {

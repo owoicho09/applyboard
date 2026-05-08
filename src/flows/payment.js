@@ -1,98 +1,99 @@
-const { sendButtons, sendText } = require('../services/messenger');
-const { setState, getState }    = require('../utils/stateManager');
-const { updateLead }            = require('../services/leadService');
-const { MESSAGES, STAGES, BTN } = require('../config/constants');
-const { formatCurrency }        = require('../utils/helpers');
-const supabase                  = require('../config/database');
+const { sendText }           = require('../services/messenger');
+const { setState, getState } = require('../utils/stateManager');
+const { updateLead }         = require('../services/leadService');
+const { MESSAGES, STAGES, BTN, REGISTRATION_FEE } = require('../config/constants');
+const { formatCurrency }     = require('../utils/helpers');
+const supabase               = require('../config/database');
 
 const handlePayment = async (from, action, state) => {
-  const amount  = state.data?.payment_amount || 50000;
-  const service = state.data?.service        || 'ApplyBoard Africa Service';
+  const amount  = action === 'REGISTRATION'
+    ? REGISTRATION_FEE
+    : (state.data?.payment_amount || REGISTRATION_FEE);
+  const service = state.data?.service || 'ApplyBoard Africa';
 
-  // ── Show invoice ──────────────────────────────────────
-  if (action === 'START' || action === BTN.PAY_NOW || action === BTN.PAY_BANK || action === BTN.PAY_INSTALL) {
+  // ── Generate Paystack link immediately ────────────────
+  // No method selection — Paystack handles card, bank, USSD etc
+  if (action === 'REGISTRATION' || action === 'START' || action === BTN.PAY_NOW) {
+    try {
+      const { initializePayment } = require('../services/paystack');
+      const email     = state.data?.email
+                     || `${from.replace('tg_', '').replace('+', '')}@applyboard.temp`;
 
-    if (action === 'START') {
-      await setState(from, STAGES.PAYMENT_INVOICE);
-      const { paymentSummary } = require('../utils/messageTemplates');
-      await sendText(from, paymentSummary(service, formatCurrency(amount)));
+      const { url, reference } = await initializePayment(email, amount, {
+        phone_number: from,
+        service,
+        name:         state.data?.name || '',
+      });
 
-      return sendButtons(
-        from,
-        'Choose your payment method:',
-        [
-          { id: BTN.PAY_NOW,     title: '💳 Pay with Card' },
-          { id: BTN.PAY_BANK,    title: '🏦 Bank Transfer' },
-          { id: BTN.PAY_INSTALL, title: '📋 Installment Plan' },
-        ]
-      );
-    }
+      await setState(from, STAGES.PAYMENT_AWAITING, { payment_ref: reference });
 
-    // ── Paystack card payment ─────────────────────────
-    if (action === BTN.PAY_NOW) {
+      // Save pending payment record
       try {
-        const { initializePayment } = require('../services/paystack');
-        const email = state.data?.email || `${from.replace('+', '')}@applyboard.temp`;
-
-        const { url, reference } = await initializePayment(email, amount, {
+        const { error } = await supabase.from('payments').insert({
           phone_number: from,
-          service,
-          name: state.data?.name || '',
+          reference,
+          amount,
+          method:       'paystack',
+          service_desc: service,
+          status:       'pending',
         });
-
-        await setState(from, STAGES.PAYMENT_AWAITING, { payment_ref: reference });
-
-        // Save pending payment record
-        // Save pending payment record
-        try {
-          const { error } = await supabase.from('payments').insert({
-            phone_number: from,
-            reference,
-            amount,
-            method:       'paystack',
-            service_desc: service,
-            status:       'pending',
-          });
-          if (error) console.error('[PAYMENT] DB insert error:', error.message);
-        } catch (err) {
-          console.error('[PAYMENT] DB insert error:', err.message);
-        }
-        await updateLead(from, { payment_status: 'pending', payment_method: 'paystack' });
-
-        return sendText(
-          from,
-          `💳 *Secure Payment Link*\n\nAmount: ${formatCurrency(amount)}\nService: ${service}\n\n👇 Click to pay securely:\n${url}\n\n🔒 _Powered by Paystack. SSL secured._\n\nOnce payment is complete, you will receive an automatic confirmation here.`
-        );
+        if (error) console.error('[PAYMENT] DB insert error:', error.message);
       } catch (err) {
-        console.error('[PAYMENT] Paystack init error:', err.message);
-        return sendText(from, `Sorry, we couldn't generate your payment link right now. Please try bank transfer or contact us directly.\n\n📞 ${process.env.BUSINESS_PHONE || ''}`);
+        console.error('[PAYMENT] DB insert error:', err.message);
       }
-    }
 
-    // ── Bank transfer ─────────────────────────────────
-    if (action === BTN.PAY_BANK) {
-      await setState(from, STAGES.PAYMENT_AWAITING, { payment_method: 'bank_transfer' });
-      await updateLead(from, { payment_status: 'pending', payment_method: 'bank_transfer' });
+      await updateLead(from, {
+        payment_status: 'pending',
+        payment_method: 'paystack',
+      });
 
-      await sendText(from, MESSAGES.bankTransfer());
       return sendText(
         from,
-        `After sending, please type:\n*"I have paid"* and our team will confirm within 1 hour. ✅`
+        `Here is your secure payment link:\n\n${url}\n\nPay with card, bank transfer, USSD — whatever works for you. Once it goes through you will get a confirmation here automatically.`
       );
-    }
 
-    // ── Installment plan ──────────────────────────────
-    if (action === BTN.PAY_INSTALL) {
-      return sendButtons(
+    } catch (err) {
+      console.error('[PAYMENT] Paystack init error:', err.message);
+      return sendText(
         from,
-        `📋 *Installment Plan Available*\n\nWe offer flexible payment plans tailored to your budget.\n\nOur counselor will create a custom plan for you on your free consultation call.`,
-        [
-          { id: BTN.SVC_CONSULT, title: '📞 Book Consultation' },
-          { id: BTN.MENU_MAIN,   title: '🏠 Main Menu' },
-        ]
+        `Having a small issue generating the link right now. Reach us directly on ${process.env.BUSINESS_PHONE || '+234 706 345 9820'} and we sort it immediately.`
       );
     }
   }
+
+  // ── Installment plan ──────────────────────────────────
+  if (action === BTN.PAY_INSTALL) {
+    return sendText(
+      from,
+      `Installment plans are available for some services. Let me flag this for the team and they will reach out with a custom plan that works for your budget.\n\nWhat is a good time to reach you?`
+    );
+  }
 };
 
-module.exports = { handlePayment };
+// ── Called by Paystack webhook after successful payment ──
+const onPaymentConfirmed = async (phone, amount, reference) => {
+  try {
+    await updateLead(phone, {
+      payment_status:     'paid',
+      payment_reference:  reference,
+      conversation_stage: 'registered',
+    });
+
+    const { sendText: send } = require('../services/messenger');
+    await send(
+      phone,
+      `Payment confirmed. You are in.\n\nReference: ${reference}\n\nSomeone from our team will be in touch shortly. Welcome to the ApplyBoard Africa family.`
+    );
+
+    // Route to the right staff member with full brief
+    const { getState }    = require('../utils/stateManager');
+    const { notifyStaff } = require('../services/notificationService');
+    const state           = await getState(phone);
+    await notifyStaff(phone, state);
+
+  } catch (err) {
+    console.error('[PAYMENT] Post-confirmation error:', err.message);
+  }
+};
+
+module.exports = { handlePayment, onPaymentConfirmed };

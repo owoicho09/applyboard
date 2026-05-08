@@ -1,29 +1,16 @@
-const { sendButtons }          = require('../services/messenger');
-const { setState }             = require('../utils/stateManager');
-const { getRandomTestimonial } = require('../data/testimonials');
-const { MESSAGES, STAGES, BTN } = require('../config/constants');
-const { getFirstName }         = require('../utils/helpers');
+const { sendText }   = require('../services/messenger');
+const { setState }   = require('../utils/stateManager');
+const { STAGES, MESSAGES } = require('../config/constants');
+const { getFirstName }     = require('../utils/helpers');
 
 const sendGreeting = async (from, name = '') => {
   const firstName = getFirstName(name);
 
-  await setState(from, STAGES.MAIN_MENU);
+  // Move to AI-driven state — no menus, no buttons
+  // The AI takes over from here
+  await setState(from, STAGES.FREE_TEXT_AI);
 
-  await sendButtons(
-    from,
-    MESSAGES.greeting(firstName),
-    [
-      { id: BTN.MENU_EXPLORE, title: '📚 Explore Services' },
-      { id: BTN.MENU_CONSULT, title: '📞 Free Consultation' },
-      { id: BTN.SVC_LOAN,     title: '💰 Study Loan' },
-    ]
-  );
-
-  // Send a testimonial 30% of the time to build social proof
-  if (Math.random() < 0.3) {
-    const { sendText } = require('../services/messenger');
-    await sendText(from, getRandomTestimonial());
-  }
+  return sendText(from, MESSAGES.greeting(firstName));
 };
 
 module.exports = { sendGreeting };

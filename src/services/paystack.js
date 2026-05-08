@@ -61,17 +61,8 @@ const handlePaystackWebhook = async (req, res) => {
       .eq('reference', reference);
 
     if (phone) {
-      const { updateLead }  = require('./leadService');
-      const { sendText }    = require('./whatsapp');
-      const { MESSAGES }    = require('../config/constants');
-
-      await updateLead(phone, {
-        payment_status:    'paid',
-        payment_reference: reference,
-        conversation_stage: 'paid',
-      });
-
-      await sendText(phone, MESSAGES.paymentConfirmed(amount / 100, reference));
+      const { onPaymentConfirmed } = require('../flows/payment');
+      await onPaymentConfirmed(phone, amount / 100, reference);
     }
   } catch (err) {
     console.error('[PAYSTACK] Webhook processing error:', err.message);
