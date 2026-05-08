@@ -1,7 +1,3 @@
-:: Open .gitignore in VS Code from your project root
-code .gitignore
-
-:: Type these lines into the file and save:
 .env
 node_modules/
 *.log
@@ -9,7 +5,8 @@ logs/
 coverage/
 .DS_Store
 dist/
+backup.zip
+applyboardafrica_db.sql
 
-:: Commit .gitignore to Git BEFORE adding any secrets
-git add .gitignore
-git commit -m "chore: add gitignore"
+ngrok.exe 
+*.sql 
