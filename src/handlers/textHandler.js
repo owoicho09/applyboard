@@ -28,27 +28,33 @@ const EXAM_AMOUNTS = {
 };
 
 const getPaymentAmount = (state) => {
-  const service = (
-    state.data?.service ||
-    state.data?.service_interested ||
-    state.data?.exam ||
-    ''
-  ).toLowerCase();
-
-  // Check exam amounts first
-  for (const [key, amount] of Object.entries(EXAM_AMOUNTS)) {
-    if (service.includes(key)) return amount;
-  }
-
-  // Check exam stored separately
+  // Check exam field first — most reliable
   const exam = (state.data?.exam || '').toLowerCase();
   for (const [key, amount] of Object.entries(EXAM_AMOUNTS)) {
     if (exam.includes(key)) return amount;
   }
 
-  // Default registration fee for everything else
+  // Check service field
+  const service = (state.data?.service || '').toLowerCase();
+  for (const [key, amount] of Object.entries(EXAM_AMOUNTS)) {
+    if (service.includes(key)) return amount;
+  }
+
+  // Check chat history for exam mentions
+  const history = state.data?.chatHistory || [];
+  const allText = history
+    .map(h => h.content || '')
+    .join(' ')
+    .toLowerCase();
+
+  for (const [key, amount] of Object.entries(EXAM_AMOUNTS)) {
+    if (allText.includes(key)) return amount;
+  }
+
+  // Default registration fee
   return 10000;
 };
+
 
 const handleText = async (from, text, state, message) => {
   const clean = sanitizeText(text).trim();
@@ -217,7 +223,7 @@ const detectAndSaveSignals = async (from, lower, state) => {
 
     // Detect and save exam type for correct amount calculation
     for (const exam of Object.keys(EXAM_AMOUNTS)) {
-      if (lower.includes(exam) && !state.data?.exam) {
+      if (lower.includes(exam)) {
         updates.exam = exam.toUpperCase();
         break;
       }
