@@ -2,34 +2,7 @@ const jwt      = require('jsonwebtoken');
 const bcrypt   = require('bcryptjs');
 const supabase = require('../config/database');
 
-// ── Department to service mapping ────────────────────────
-const DEPT_SERVICES = {
-  admissions:   ['study_abroad', 'loan', 'pof'],
-  visa:         ['visa'],
-  support:      ['test_prep'],
-  finance:      ['all'], // sees all payments
-  info:         ['travel', 'insurance', 'pilgrimage', 'general'],
-  partnerships: ['partnerships'],
-  complaints:   ['escalated', 'complaints'],
-  superadmin:   ['all'],
-};
-
-const getDeptFromEmail = (email) => {
-  if (!email) return 'info';
-  const prefix = email.split('@')[0].toLowerCase();
-  const map = {
-    admissions:   'admissions',
-    support:      'support',
-    info:         'info',
-    finance:      'finance',
-    visa:         'visa',
-    partnerships: 'partnerships',
-    complaints:   'complaints',
-  };
-  return map[prefix] || 'info';
-};
-
-// ── Team member login ─────────────────────────────────────
+// ── Team member email/password login ─────────────────────
 const loginUser = async (email, password) => {
   const { data: user, error } = await supabase
     .from('admin_users')
@@ -40,6 +13,7 @@ const loginUser = async (email, password) => {
 
   if (error || !user) throw new Error('Invalid email or password');
 
+  // Support both plain text and bcrypt hashed passwords
   let valid = false;
   if (user.password.startsWith('$2')) {
     valid = await bcrypt.compare(password, user.password);
@@ -49,6 +23,7 @@ const loginUser = async (email, password) => {
 
   if (!valid) throw new Error('Invalid email or password');
 
+  // Update last login timestamp
   await supabase
     .from('admin_users')
     .update({ last_login: new Date().toISOString() })
@@ -57,7 +32,7 @@ const loginUser = async (email, password) => {
   return user;
 };
 
-// ── Basic auth (super admin via env) ─────────────────────
+// ── Basic auth (super admin only) ────────────────────────
 const basicAuth = (req, res, next) => {
   const authHeader   = req.headers['authorization'] || '';
   const b64          = authHeader.split(' ')[1] || '';
@@ -106,6 +81,4 @@ module.exports = {
   loginUser,
   generateToken,
   verifyToken,
-  getDeptFromEmail,
-  DEPT_SERVICES,
 };
