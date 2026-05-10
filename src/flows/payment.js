@@ -81,7 +81,7 @@ const onPaymentConfirmed = async (phone, amount, reference) => {
     const { sendText: send } = require('../services/messenger');
     await send(
       phone,
-      `Payment confirmed. You are in.\n\nReference: ${reference}\n\nSomeone from our team will be in touch shortly. Welcome to the ApplyBoard Africa family.`
+      `Payment confirmed. You are in.\n\nReference: ${reference}\n\nNext step — book your session with our team directly here:\n\nhttps://calendly.com/applyboardafrica-info/new-meeting\n\nPick a time that works for you and they will be ready with everything they need about your case.`
     );
 
     // Route to the right staff member with full brief
