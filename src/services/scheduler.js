@@ -1,11 +1,22 @@
-const cron       = require('node-cron');
-const Anthropic  = require('@anthropic-ai/sdk');
-const tg = require('./telegram');
+const cron      = require('node-cron');
+const Anthropic = require('@anthropic-ai/sdk');
+const axios     = require('axios');
+const tg        = require('./telegram');
 
-const client     = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-const GROUP_ID   = process.env.TELEGRAM_GROUP_ID;
-const BOT_LINK   = 'https://t.me/ApplyBoardbot';
-const MODEL      = 'claude-haiku-4-5-20251001';
+const client   = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const GROUP_ID = process.env.TELEGRAM_GROUP_ID;
+const BOT_LINK = 'https://t.me/ApplyBoardbot';
+const MODEL    = 'claude-haiku-4-5-20251001';
+
+// ── Telegram API helper ───────────────────────────────────
+const telegramApi = async (method, data) => {
+  const res = await axios.post(
+    `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/${method}`,
+    data,
+    { headers: { 'Content-Type': 'application/json' } }
+  );
+  return res.data;
+};
 
 // ── Generate morning message using Claude ─────────────────
 const generateMorningMessage = async () => {
@@ -36,7 +47,7 @@ const generateMorningMessage = async () => {
     messages: [{
       role:    'user',
       content: `You are writing a daily morning message for a Telegram group called ApplyBoard Africa.
-The group has helped 900+ Nigerians who want to study abroad, get visas, or relocate internationally.
+The group has 900+ Nigerians who want to study abroad, get visas, or relocate internationally.
 
 Today is ${today}.
 Topic: ${topic}
@@ -57,7 +68,7 @@ Write a short, punchy, fact-based morning message that:
   return response.content[0]?.text || '';
 };
 
-// ── Generate weekly poll using Claude ─────────────────────
+// ── Generate weekly poll ──────────────────────────────────
 const generateWeeklyPoll = async () => {
   const pollTopics = [
     { question: 'Which country are you most seriously considering for studying abroad?', options: ['Canada', 'United Kingdom', 'Germany', 'Australia', 'Other'] },
@@ -69,24 +80,26 @@ const generateWeeklyPoll = async () => {
     { question: 'How long have you been planning to study abroad?', options: ['Just started thinking about it', '3 to 6 months', '6 months to 1 year', 'Over 1 year', 'Already have admission'] },
   ];
 
-  const weekNumber  = Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000));
+  const weekNumber = Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000));
   return pollTopics[weekNumber % pollTopics.length];
 };
 
 // ── Send morning message ──────────────────────────────────
 const sendMorningMessage = async () => {
-  if (!GROUP_ID) {
-    console.warn('[SCHEDULER] TELEGRAM_GROUP_ID not set — skipping morning message');
-    return;
-  }
+  if (!GROUP_ID) { console.warn('[SCHEDULER] TELEGRAM_GROUP_ID not set'); return; }
   try {
     console.log('[SCHEDULER] Generating morning message...');
     const message = await generateMorningMessage();
     if (!message) return;
 
-    await tg.sendText(GROUP_ID, message);
+    await telegramApi('sendMessage', {
+      chat_id:                  GROUP_ID,
+      text:                     message,
+      parse_mode:               'Markdown',
+      disable_web_page_preview: true,
+    });
 
-    console.log('[SCHEDULER] Morning message sent to group');
+    console.log('[SCHEDULER] Morning message sent');
   } catch (err) {
     console.error('[SCHEDULER] Morning message error:', err.message);
   }
@@ -94,28 +107,20 @@ const sendMorningMessage = async () => {
 
 // ── Send weekly poll ──────────────────────────────────────
 const sendWeeklyPoll = async () => {
-  if (!GROUP_ID) {
-    console.warn('[SCHEDULER] TELEGRAM_GROUP_ID not set — skipping poll');
-    return;
-  }
+  if (!GROUP_ID) { console.warn('[SCHEDULER] TELEGRAM_GROUP_ID not set'); return; }
   try {
     console.log('[SCHEDULER] Sending weekly poll...');
     const poll = await generateWeeklyPoll();
 
-    const axios = require('axios');
-    await axios.post(
-      `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendPoll`,
-      {
-        chat_id:                 GROUP_ID,
-        question:                poll.question,
-        options:                 poll.options,
-        is_anonymous:            false,
-        allows_multiple_answers: false,
-      },
-      { headers: { 'Content-Type': 'application/json' } }
-    );
+    await telegramApi('sendPoll', {
+      chat_id:                 GROUP_ID,
+      question:                poll.question,
+      options:                 poll.options,
+      is_anonymous:            false,
+      allows_multiple_answers: false,
+    });
 
-    console.log('[SCHEDULER] Weekly poll sent to group');
+    console.log('[SCHEDULER] Weekly poll sent');
   } catch (err) {
     console.error('[SCHEDULER] Weekly poll error:', err.message);
   }
@@ -124,22 +129,21 @@ const sendWeeklyPoll = async () => {
 // ── Welcome new member ────────────────────────────────────
 const sendWelcomeMessage = async (member, chatId) => {
   try {
-    const name = member.first_name || 'there';
+    const name    = member.first_name || 'there';
     const message =
       `Welcome ${name}.\n\n` +
       `You just joined a community of people actively planning to study abroad, relocate, and build better futures.\n\n` +
       `Whether you are thinking about Canada, UK, Germany, Australia, or anywhere else — ` +
       `the information and support you need is here.\n\n` +
-      `To get started with your own personalised plan, send me a direct message here → ${BOT_LINK}`;
+      `To get started with your own personalised plan, send me a direct message → ${BOT_LINK}`;
 
-    await call('sendMessage', {
-      chat_id:    chatId,
-      text:       message,
-      parse_mode: 'Markdown',
+    await telegramApi('sendMessage', {
+      chat_id:                  chatId,
+      text:                     message,
       disable_web_page_preview: true,
     });
 
-    console.log(`[SCHEDULER] Welcomed new member: ${name}`);
+    console.log(`[SCHEDULER] Welcomed: ${name}`);
   } catch (err) {
     console.error('[SCHEDULER] Welcome error:', err.message);
   }
@@ -152,27 +156,27 @@ const startScheduler = () => {
     return;
   }
 
-  // Daily morning message — 8:00 AM WAT (UTC+1 = 07:00 UTC)
+  // Daily morning message — 8:00 AM WAT
   cron.schedule('0 8 * * *', () => {
-    console.log('[SCHEDULER] Firing morning message job...');
+    console.log('[SCHEDULER] Firing morning message...');
     sendMorningMessage();
   }, { timezone: 'Africa/Lagos' });
 
-  // Weekly poll — Every Monday 9:00 AM WAT
-  cron.schedule('0 10 * * 1', () => {
-    console.log('[SCHEDULER] Firing weekly poll job...');
+  // Weekly poll — Monday 9:00 AM WAT
+  cron.schedule('0 9 * * 1', () => {
+    console.log('[SCHEDULER] Firing weekly poll...');
     sendWeeklyPoll();
   }, { timezone: 'Africa/Lagos' });
 
   console.log('[SCHEDULER] All jobs scheduled:');
-  console.log('[SCHEDULER]   Daily morning message → 9:00 AM WAT');
-  console.log('[SCHEDULER]   Weekly poll           → Monday 10:00 AM WAT');
+  console.log('[SCHEDULER]   Daily morning message → 8:00 AM WAT');
+  console.log('[SCHEDULER]   Weekly poll           → Monday 9:00 AM WAT');
   console.log('[SCHEDULER]   Welcome new members   → on join event');
 };
 
 module.exports = {
   startScheduler,
   sendWelcomeMessage,
-  sendMorningMessage,  // exported so you can test manually
-  sendWeeklyPoll,      // exported so you can test manually
+  sendMorningMessage,
+  sendWeeklyPoll,
 };
