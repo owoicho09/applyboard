@@ -1,7 +1,6 @@
 const cron      = require('node-cron');
 const Anthropic = require('@anthropic-ai/sdk');
 const axios     = require('axios');
-const tg        = require('./telegram');
 
 const client   = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const GROUP_ID = process.env.TELEGRAM_GROUP_ID;
@@ -18,50 +17,65 @@ const telegramApi = async (method, data) => {
   return res.data;
 };
 
-// ── Generate morning message using Claude ─────────────────
+// ── Generate morning message ──────────────────────────────
 const generateMorningMessage = async () => {
-  const topics = [
-    'Canada post-graduation work permit and how international students can stay and work for up to 3 years after graduating',
-    'Germany tuition-free public universities and what Nigerian students need to know about applying',
-    'UK Graduate Route visa that allows students to stay and work for 2 years after graduation',
-    'Study loans available for Nigerian students going abroad including interest rates and repayment terms',
-    'IELTS score requirements for top study destinations and tips to improve your band score',
-    'Australian student visa work rights allowing 48 hours per fortnight during studies',
-    'Ireland as an emerging study destination with strong tech job market for graduates',
-    'Proof of funds requirements for Canada UK Germany Australia and Schengen visa applications',
-    'How Nigerian students can get scholarships covering 10 to 50 percent of tuition at partner schools abroad',
-    'The difference between a study visa and a student permit and why it matters for your application',
-    'Netherlands English-taught masters programs and why it is becoming popular for Nigerian students',
-    'How to choose between Canada and UK for a masters degree based on cost career goals and post-study options',
-    'What happens if your visa gets rejected and how ApplyBoard Africa handles refusal cases with 95 percent success rate',
-    'Brazil as an underrated affordable study destination with growing opportunities for African students',
-    'How the PGWP Canada pathway works and why it is one of the best routes to Canadian permanent residency',
-  ];
-
-  const today = new Date().toLocaleDateString('en-NG', { weekday: 'long', timeZone: 'Africa/Lagos' });
-  const topic = topics[new Date().getDate() % topics.length];
+  const day  = new Date().toLocaleDateString('en-NG', { weekday:'long', timeZone:'Africa/Lagos' });
+  const hour = new Date().toLocaleTimeString('en-NG', { hour:'2-digit', timeZone:'Africa/Lagos' });
 
   const response = await client.messages.create({
     model:      MODEL,
-    max_tokens: 300,
+    max_tokens: 250,
     messages: [{
       role:    'user',
-      content: `You are writing a daily morning message for a Telegram group called ApplyBoard Africa.
-The group has 900+ Nigerians who want to study abroad, get visas, or relocate internationally.
+      content: `You are Ade — a sharp, warm Nigerian who has personally helped thousands of Nigerians study abroad and relocate. You are dropping a morning message in a Telegram group of 900+ Nigerians who are serious about studying abroad, getting visas, or relocating internationally.
 
-Today is ${today}.
-Topic: ${topic}
+Today is ${day}, around ${hour} WAT.
 
-Write a short, punchy, fact-based morning message that:
-- Starts with a greeting relevant to the day
-- Shares one genuinely useful and surprising fact about the topic
-- Keeps it conversational and human — not corporate
-- Creates curiosity and desire to learn more
-- Ends with this exact call to action on its own line: "Send me a DM here → ${BOT_LINK}"
-- Maximum 5 sentences total
-- No emojis
-- No hashtags
-- Sound like a knowledgeable friend not a company`,
+Your job is to share ONE genuinely useful, specific, conversion-focused fact or insight that:
+
+- Is directly relevant to Nigerians trying to study or relocate abroad
+- Comes from real knowledge — not generic advice
+- Makes someone think "I did not know that" or "this changes things for me"
+- Creates a real reason to take action today
+
+Topics you can draw from — pick one randomly and go deep:
+- Specific visa processing times for Nigerian passport holders (Canada, UK, Germany, Australia, Schengen, Ireland, Netherlands, New Zealand, UAE, Malaysia)
+- Hidden costs Nigerians overlook when planning to study abroad (application fees, credential evaluation, health insurance, settlement funds)
+- IELTS band score requirements by country and by program type and what happens if you fall short
+- How the Canada PGWP actually works and why a 2 year program gives you 3 years work permit not 2
+- Germany blocked account requirements and how much Nigerians need to show for student visa
+- UK Graduate Route visa and what sectors are actually hiring international graduates right now
+- Study loans — who qualifies, age rules, what programs are eligible, what is covered
+- Post-study work rights comparison across Canada UK Germany Australia Ireland Netherlands
+- Scholarship opportunities Nigerian students regularly miss and how to find them
+- Proof of funds — exact amounts required per destination and what counts as valid proof
+- Common reasons Nigerian visa applications get rejected and what actually fixes them
+- What ApplyBoard Africa has done for clients — real outcomes, success rate, destinations covered
+- The difference between conditional and unconditional offers and why it matters for your visa
+- How Nigerian students can work while studying in different countries — hours allowed by law
+- Why Germany is one of the best decisions a Nigerian student can make right now
+- How study abroad can lead to permanent residency — Canada Express Entry, Australia PR, UK ILR
+- What NECO and WAEC equivalency looks like in different countries and how to handle it
+- Vocational and diploma programs abroad that lead to strong careers and are easier to get into
+- How to get a Canadian student visa faster using the SDS stream
+- What Brexit changed for Nigerian students going to the UK
+- How to combine IELTS prep with your application process to save 3 to 6 months
+- The real cost of studying in Canada vs UK vs Germany for a Nigerian family
+- How the ApplyBoard Africa loan works — who qualifies, what it covers, repayment terms
+- Why some Nigerian students get rejected for visas even with strong academics
+- Mental and emotional things Nigerians face abroad that nobody talks about before they leave
+
+Rules for writing:
+- Open with something unexpected — a fact, a number, a question, a bold statement — not "good morning everyone"
+- Write like you are texting someone you genuinely care about helping
+- One idea only — go deep not broad
+- Keep it under 5 sentences
+- Use 1 or 2 emojis where they feel natural — not forced
+- End the message with a new line containing only: "DM me to talk about your situation → ${BOT_LINK}"
+- Never sound like a company announcement or newsletter
+- Never be vague — use specific numbers, timelines, country names, program names
+- Rotate your opening style — sometimes start with a fact, sometimes a question, sometimes a provocative statement, sometimes a story opener
+- Make it feel like it was written today for Nigerians specifically`,
     }],
   });
 
@@ -70,18 +84,110 @@ Write a short, punchy, fact-based morning message that:
 
 // ── Generate weekly poll ──────────────────────────────────
 const generateWeeklyPoll = async () => {
-  const pollTopics = [
-    { question: 'Which country are you most seriously considering for studying abroad?', options: ['Canada', 'United Kingdom', 'Germany', 'Australia', 'Other'] },
-    { question: 'What is your biggest concern about studying abroad?', options: ['Cost and funding', 'Visa approval', 'IELTS requirement', 'Choosing the right school', 'Family pressure'] },
-    { question: 'Which stage of the study abroad process are you currently at?', options: ['Just researching', 'Preparing documents', 'Applied for admission', 'Waiting for visa', 'Already abroad'] },
-    { question: 'What service do you need most help with right now?', options: ['University admission', 'Visa processing', 'Study loan', 'IELTS preparation', 'Travel and flights'] },
-    { question: 'What is your target intake for studying abroad?', options: ['September 2025', 'January 2026', 'September 2026', 'January 2027', 'Still deciding'] },
-    { question: 'Which program level are you planning to study?', options: ['Undergraduate', 'Masters', 'Diploma or Vocational', 'PhD', 'Short course'] },
-    { question: 'How long have you been planning to study abroad?', options: ['Just started thinking about it', '3 to 6 months', '6 months to 1 year', 'Over 1 year', 'Already have admission'] },
-  ];
+  const response = await client.messages.create({
+    model:      MODEL,
+    max_tokens: 300,
+    messages: [{
+      role:    'user',
+      content: `You are creating a weekly poll for a Telegram group of 900+ Nigerians who are planning to study abroad, get visas, or relocate internationally. The group is run by ApplyBoard Africa, a consultancy that has helped 5,000+ Nigerian clients.
 
-  const weekNumber = Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000));
-  return pollTopics[weekNumber % pollTopics.length];
+Create ONE poll question that:
+- Feels like something a curious, smart friend would ask — not a corporate survey
+- Gets at something real that people in this group are actually thinking or worried about
+- Will make people want to vote AND comment
+- Is specific to the Nigerian experience of studying abroad or relocating
+- Could spark a conversation in the group
+
+Topics to draw from — pick one and make it specific:
+- The real reason people keep delaying their study abroad plans
+- Fears about leaving Nigeria — family, money, uncertainty, loneliness
+- What people wish they knew before starting the process
+- Funding strategies — loan, family support, scholarship, personal savings
+- Which destination they are leaning toward and why
+- IELTS and language test anxiety
+- Visa rejection fears
+- Post-graduation plans — stay abroad or come back
+- Whether their family supports the decision to leave
+- What stage of planning they are actually at right now
+- Whether they trust consultancies or prefer to DIY
+- The biggest misconception they had about studying abroad
+- What would make them take action this week
+- Their biggest motivation for wanting to leave — career, safety, lifestyle, education quality
+- How long they have been "planning" without actually starting
+
+Generate a question that is direct, human, and slightly provocative — not safe and boring.
+
+Respond with ONLY valid JSON, no explanation, no markdown:
+{
+  "question": "your poll question here — max 255 characters",
+  "options": ["option 1", "option 2", "option 3", "option 4"]
+}
+
+Each option should be short, real, and relatable to Nigerians. Maximum 100 characters per option.`,
+    }],
+  });
+
+  try {
+    const text    = response.content[0]?.text || '';
+    const cleaned = text.replace(/```json|```/g, '').trim();
+    const parsed  = JSON.parse(cleaned);
+
+    // Validate lengths — Telegram limits
+    if (parsed.question.length > 255) {
+      parsed.question = parsed.question.slice(0, 252) + '...';
+    }
+    parsed.options = parsed.options.map(o =>
+      o.length > 100 ? o.slice(0, 97) + '...' : o
+    );
+
+    return parsed;
+  } catch {
+    return {
+      question: 'Be honest — what is actually stopping you from starting your study abroad process right now?',
+      options:  ['Money is not ready', 'IELTS is the problem', 'Family does not support it', 'I do not know where to start'],
+    };
+  }
+};
+
+// ── Welcome new member ────────────────────────────────────
+const sendWelcomeMessage = async (member, chatId) => {
+  try {
+    const name = member.first_name || 'friend';
+
+    const response = await client.messages.create({
+      model:      MODEL,
+      max_tokens: 180,
+      messages: [{
+        role:    'user',
+        content: `You are Ade, a warm and sharp Nigerian consultant who has helped thousands of Nigerians study abroad and relocate. Someone called ${name} just joined a Telegram group of 900+ Nigerians who are planning to study abroad or relocate internationally.
+
+Write a short personal welcome message for ${name} that:
+- Feels like it was written for them specifically — not copy-pasted
+- Acknowledges they just took a real step by joining
+- Creates a sense that something genuinely useful is available here
+- Invites them to start a private conversation with you
+- Ends with: "Start here → ${BOT_LINK}"
+- Maximum 3 sentences
+- Use 1 emoji naturally somewhere in the message
+- Do NOT open with "Welcome to the group" or "Welcome ${name}" — be more original
+- Sound like a real person, warm but not over the top
+- Make them feel like joining this group was a smart decision`,
+      }],
+    });
+
+    const message = response.content[0]?.text ||
+      `Hey ${name}, glad you found this space 👋 This is where Nigerians who are serious about going abroad actually figure things out — no noise, just real information and real help. Start a conversation with me directly → ${BOT_LINK}`;
+
+    await telegramApi('sendMessage', {
+      chat_id:                  chatId,
+      text:                     message,
+      disable_web_page_preview: true,
+    });
+
+    console.log(`[SCHEDULER] Welcomed: ${name}`);
+  } catch (err) {
+    console.error('[SCHEDULER] Welcome error:', err.message);
+  }
 };
 
 // ── Send morning message ──────────────────────────────────
@@ -95,7 +201,6 @@ const sendMorningMessage = async () => {
     await telegramApi('sendMessage', {
       chat_id:                  GROUP_ID,
       text:                     message,
-      parse_mode:               'Markdown',
       disable_web_page_preview: true,
     });
 
@@ -123,29 +228,6 @@ const sendWeeklyPoll = async () => {
     console.log('[SCHEDULER] Weekly poll sent');
   } catch (err) {
     console.error('[SCHEDULER] Weekly poll error:', err.message);
-  }
-};
-
-// ── Welcome new member ────────────────────────────────────
-const sendWelcomeMessage = async (member, chatId) => {
-  try {
-    const name    = member.first_name || 'there';
-    const message =
-      `Welcome ${name}.\n\n` +
-      `You just joined a community of people actively planning to study abroad, relocate, and build better futures.\n\n` +
-      `Whether you are thinking about Canada, UK, Germany, Australia, or anywhere else — ` +
-      `the information and support you need is here.\n\n` +
-      `To get started with your own personalised plan, send me a direct message → ${BOT_LINK}`;
-
-    await telegramApi('sendMessage', {
-      chat_id:                  chatId,
-      text:                     message,
-      disable_web_page_preview: true,
-    });
-
-    console.log(`[SCHEDULER] Welcomed: ${name}`);
-  } catch (err) {
-    console.error('[SCHEDULER] Welcome error:', err.message);
   }
 };
 
