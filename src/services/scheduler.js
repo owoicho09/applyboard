@@ -1,6 +1,6 @@
 const cron       = require('node-cron');
 const Anthropic  = require('@anthropic-ai/sdk');
-const { call }   = require('./telegram');
+const tg = require('./telegram');
 
 const client     = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const GROUP_ID   = process.env.TELEGRAM_GROUP_ID;
@@ -84,12 +84,7 @@ const sendMorningMessage = async () => {
     const message = await generateMorningMessage();
     if (!message) return;
 
-    await call('sendMessage', {
-      chat_id:    GROUP_ID,
-      text:       message,
-      parse_mode: 'Markdown',
-      disable_web_page_preview: true,
-    });
+    await tg.sendText(GROUP_ID, message);
 
     console.log('[SCHEDULER] Morning message sent to group');
   } catch (err) {
@@ -107,13 +102,18 @@ const sendWeeklyPoll = async () => {
     console.log('[SCHEDULER] Sending weekly poll...');
     const poll = await generateWeeklyPoll();
 
-    await call('sendPoll', {
-      chat_id:      GROUP_ID,
-      question:     poll.question,
-      options:      poll.options,
-      is_anonymous: false,
-      allows_multiple_answers: false,
-    });
+    const axios = require('axios');
+    await axios.post(
+      `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendPoll`,
+      {
+        chat_id:                 GROUP_ID,
+        question:                poll.question,
+        options:                 poll.options,
+        is_anonymous:            false,
+        allows_multiple_answers: false,
+      },
+      { headers: { 'Content-Type': 'application/json' } }
+    );
 
     console.log('[SCHEDULER] Weekly poll sent to group');
   } catch (err) {
