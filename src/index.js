@@ -63,6 +63,19 @@ app.get('/health', (req, res) => {
   });
 });
 
+// ── Scheduler test (remove after testing) ────────────────
+app.get('/test/morning', async (req, res) => {
+  const { sendMorningMessage } = require('./services/scheduler');
+  await sendMorningMessage();
+  res.json({ ok: true, message: 'Morning message triggered' });
+});
+
+app.get('/test/poll', async (req, res) => {
+  const { sendWeeklyPoll } = require('./services/scheduler');
+  await sendWeeklyPoll();
+  res.json({ ok: true, message: 'Poll triggered' });
+});
+
 // ── WhatsApp webhook ──────────────────────────────────────
 const { verifyWebhook }  = require('./middleware/webhookVerify');
 const { handleIncoming } = require('./handlers/messageHandler');
