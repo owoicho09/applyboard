@@ -5,12 +5,12 @@ const { upsertLead, logMessage } = require('../services/leadService');
 const { MESSAGES }               = require('../config/constants');
 const { sanitizeText }           = require('../utils/validators');
 const { setReplyChat }           = require('../services/messenger');
+const { sendWelcomeMessage }     = require('../services/scheduler');
 
 // ── Bot username ──────────────────────────────────────────
 const BOT_USERNAME = 'ApplyBoardbot';
 
 // ── Always use user_id as identifier ─────────────────────
-// Same person tracked whether they message from group or DM
 const tgId = (userId) => `tg_${userId}`;
 
 // ── Detect group chat ─────────────────────────────────────
@@ -82,6 +82,27 @@ const handleTelegram = async (update) => {
       const name   = msg.from?.first_name || '';
       const text   = msg.text?.trim() || '';
 
+      // ── New member joined ─────────────────────────────
+      if (msg.new_chat_members?.length) {
+        for (const member of msg.new_chat_members) {
+          // Skip if the new member is the bot itself
+          if (member.username?.toLowerCase() === BOT_USERNAME.toLowerCase()) continue;
+          // Skip bots
+          if (member.is_bot) continue;
+
+          console.log(`[TELEGRAM] New member joined: ${member.first_name} (${member.id})`);
+          await sendWelcomeMessage(member, chatId);
+
+          // Also upsert as a lead so they appear in CRM
+          const memberPhone = tgId(member.id);
+          await upsertLead(memberPhone, {
+            name:   member.first_name || '',
+            source: 'telegram_group',
+          }).catch(() => {});
+        }
+        return;
+      }
+
       if (!text || !userId) return;
 
       // ── GROUP ─────────────────────────────────────────
@@ -111,7 +132,7 @@ const handleTelegram = async (update) => {
 
         console.log(`[TELEGRAM] Group mention userId=${userId} chatId=${chatId} stage=${state.stage} text="${cleanText.slice(0, 50)}"`);
 
-        // Tell messenger to reply to the GROUP chat not the user's DM
+        // Tell messenger to reply to the GROUP not the user's DM
         setReplyChat(chatId);
 
         const { handleText } = require('./textHandler');
@@ -120,8 +141,6 @@ const handleTelegram = async (update) => {
       }
 
       // ── PRIVATE DM ────────────────────────────────────
-      // chatId === userId in DMs so no override needed
-      // History carries over from group because same user_id
       const phone = tgId(userId);
 
       const limited = await isRateLimited(phone);
@@ -138,7 +157,6 @@ const handleTelegram = async (update) => {
 
       console.log(`[TELEGRAM] DM userId=${userId} stage=${state.stage} text="${text.slice(0, 50)}"`);
 
-      // No setReplyChat needed — DM chat_id is already the user
       const { handleText } = require('./textHandler');
       await handleText(phone, sanitizeText(text), state, { platform: 'telegram', chatId });
     }

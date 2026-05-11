@@ -1,6 +1,5 @@
 require('dotenv').config();
 
-// ── Validate required env vars before anything loads ──────
 const REQUIRED_ENV = [
   'WHATSAPP_TOKEN',
   'WHATSAPP_PHONE_NUMBER_ID',
@@ -27,13 +26,12 @@ const cors         = require('cors');
 const logger       = require('./config/logger');
 const cookieParser = require('cookie-parser');
 
-// ── Trigger DB + Redis connection on load ─────────────────
 require('./config/database');
 require('./config/redis');
 
 const app = express();
 
-// ── Admin CSP override — must come BEFORE helmet ──────────
+// ── Admin CSP override ────────────────────────────────────
 app.use('/admin', (req, res, next) => {
   res.setHeader(
     'Content-Security-Policy',
@@ -42,14 +40,12 @@ app.use('/admin', (req, res, next) => {
   next();
 });
 
-// ── Security middleware ───────────────────────────────────
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors());
 app.use(logger);
 app.use(cookieParser());
 
 // ── Body parsing ──────────────────────────────────────────
-// Meta requires raw body for webhook signature verification
 app.use('/webhook',         express.raw({ type: 'application/json' }));
 app.use('/payment/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json());
@@ -58,38 +54,31 @@ app.use(express.urlencoded({ extended: false }));
 // ── Health check ──────────────────────────────────────────
 app.get('/health', (req, res) => {
   res.json({
-    status:  'ok',
-    service: 'ApplyBoard Africa Bot',
-    ts:      new Date().toISOString(),
-    env:     process.env.NODE_ENV || 'development',
-    gateway: 'Meta WhatsApp Cloud API',
+    status:    'ok',
+    service:   'ApplyBoard Africa Bot',
+    ts:        new Date().toISOString(),
+    env:       process.env.NODE_ENV || 'development',
+    gateway:   'Meta WhatsApp Cloud API + Telegram',
+    scheduler: process.env.TELEGRAM_GROUP_ID ? 'active' : 'disabled',
   });
 });
 
-// ── Webhook routes ────────────────────────────────────────
+// ── WhatsApp webhook ──────────────────────────────────────
 const { verifyWebhook }  = require('./middleware/webhookVerify');
 const { handleIncoming } = require('./handlers/messageHandler');
 
-// Meta sends GET to verify webhook — must respond with challenge
 app.get('/webhook', verifyWebhook);
 
-// Meta sends POST for every incoming message
 app.post('/webhook', async (req, res) => {
-  // Always respond 200 immediately — Meta drops if no response within 20s
   res.sendStatus(200);
-
   try {
     const body = JSON.parse(req.body);
-
-    // Ignore anything that isn't a WhatsApp message event
     if (body.object !== 'whatsapp_business_account') return;
-
     const entry = body?.entry?.[0]?.changes?.[0]?.value;
-    if (!entry?.messages?.[0]) return; // Status updates — ignore
-
+    if (!entry?.messages?.[0]) return;
     await handleIncoming(entry);
   } catch (err) {
-    console.error('[WEBHOOK] Processing error:', err.message);
+    console.error('[WEBHOOK] Error:', err.message);
   }
 });
 
@@ -97,8 +86,7 @@ app.post('/webhook', async (req, res) => {
 const { handleTelegram } = require('./handlers/telegramHandler');
 
 app.post('/telegram/webhook', async (req, res) => {
-  res.sendStatus(200); // Always respond immediately
-
+  res.sendStatus(200);
   try {
     if (!req.body) return;
     await handleTelegram(req.body);
@@ -107,13 +95,31 @@ app.post('/telegram/webhook', async (req, res) => {
   }
 });
 
-// ── Register Telegram webhook on startup ──────────────────
-if (process.env.TELEGRAM_BOT_TOKEN && process.env.BASE_URL) {
-  const { registerWebhook } = require('./services/telegram');
-  registerWebhook(process.env.BASE_URL)
-    .then(() => console.log('[TELEGRAM] Webhook registered successfully'))
-    .catch((err) => console.error('[TELEGRAM] Webhook registration failed:', err.message));
-}
+// ── Paystack callback ─────────────────────────────────────
+app.get('/payment/callback', (req, res) => {
+  const { reference } = req.query;
+  res.send(`
+    <html>
+      <head>
+        <title>Payment Processing</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+          body { font-family: Arial, sans-serif; text-align: center; padding: 60px 20px; background: #f0fdf4; }
+          h2   { color: #166534; }
+          p    { color: #475569; }
+          .ref { background: #dcfce7; padding: 8px 16px; border-radius: 8px; display: inline-block; font-weight: bold; color: #166534; }
+        </style>
+      </head>
+      <body>
+        <h2>Payment Received</h2>
+        <p>Your payment is being confirmed.</p>
+        <p>You will receive a message on WhatsApp or Telegram shortly.</p>
+        <p class="ref">${reference || ''}</p>
+        <p style="margin-top:24px;font-size:13px;color:#94a3b8">You can close this page.</p>
+      </body>
+    </html>
+  `);
+});
 
 // ── Payment webhook (Paystack) ────────────────────────────
 app.post('/payment/webhook', async (req, res) => {
@@ -126,27 +132,11 @@ app.post('/payment/webhook', async (req, res) => {
   }
 });
 
-// ── Paystack callback (redirect after payment) ────────────
-app.get('/payment/callback', (req, res) => {
-  const { reference } = req.query;
-  // Just show a success page — webhook handles the actual confirmation
-  res.send(`
-    <html>
-      <head><title>Payment Processing</title></head>
-      <body style="font-family:Arial;text-align:center;padding:60px">
-        <h2>Payment Received</h2>
-        <p>Your payment is being confirmed. You will receive a message on WhatsApp/Telegram shortly.</p>
-        <p>Reference: <strong>${reference}</strong></p>
-      </body>
-    </html>
-  `);
-});
-
 // ── Admin dashboard ───────────────────────────────────────
 const dashboardRoutes = require('./admin/dashboardRoutes');
 app.use('/admin', dashboardRoutes);
 
-// ── 404 handler ───────────────────────────────────────────
+// ── 404 ───────────────────────────────────────────────────
 app.use((req, res) => {
   res.status(404).json({ error: 'Not found' });
 });
@@ -169,10 +159,26 @@ app.listen(PORT, () => {
   console.log('╔══════════════════════════════════════════╗');
   console.log('║     ApplyBoard Africa Bot — ONLINE       ║');
   console.log(`║     Port: ${PORT}   ENV: ${(process.env.NODE_ENV || 'development').padEnd(14)}║`);
-  console.log('║     Gateway: Meta WhatsApp Cloud API     ║');
+  console.log('║     Gateway: Meta WhatsApp + Telegram    ║');
   console.log('║     /health  /webhook  /admin            ║');
   console.log('╚══════════════════════════════════════════╝');
   console.log('');
+
+  // ── Register Telegram webhook ─────────────────────────
+  if (process.env.TELEGRAM_BOT_TOKEN && process.env.BASE_URL) {
+    const { registerWebhook } = require('./services/telegram');
+    registerWebhook(process.env.BASE_URL)
+      .then(() => console.log('[TELEGRAM] Webhook registered successfully'))
+      .catch((err) => console.error('[TELEGRAM] Webhook registration failed:', err.message));
+  }
+
+  // ── Start group scheduler ─────────────────────────────
+  if (process.env.TELEGRAM_GROUP_ID) {
+    const { startScheduler } = require('./services/scheduler');
+    startScheduler();
+  } else {
+    console.warn('[SCHEDULER] TELEGRAM_GROUP_ID not set — group features disabled');
+  }
 });
 
 module.exports = app;
