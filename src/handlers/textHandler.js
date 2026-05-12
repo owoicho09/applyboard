@@ -122,7 +122,7 @@ const handleText = async (from, text, state, message) => {
   if (state.stage === STAGES.PAYMENT_AWAITING) {
     const { sendButtons } = require('../services/messenger');
     await sendButtons(from, cleanReply, [
-      { id: 'PAY_NOW', label: '💳 Pay Registration Fee' }
+      { id: 'PAY_NOW', title: '💳 Pay Registration Fee' }
     ]);
   } else {
     await sendText(from, cleanReply);
