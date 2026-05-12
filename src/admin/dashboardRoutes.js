@@ -7,7 +7,7 @@ const {
 } = require('./dashboardAuth');
 const supabase         = require('../config/database');
 const { sendBroadcast } = require('../services/broadcast');
-const { sendText }      = require('../services/messenger');
+const { sendText, sendButtons }      = require('../services/messenger');
 
 // ── Serve dashboard HTML ──────────────────────────────────
 router.get('/', (req, res) => {
