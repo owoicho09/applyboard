@@ -424,7 +424,7 @@ router.post('/api/message', express.json(), async (req, res) => {
 
     if (lead?.payment_status === 'pending') {
       await sendButtons(phone, message, [
-        { id: 'PAY_NOW', title: '💳 Pay Registration Fee' }
+        { id: 'PAY_NOW', title: '💳 Regenerate payment link' }
       ]);
     } else {
       await sendText(phone, message);
