@@ -1,5 +1,5 @@
-const crypto  = require('crypto');
-const axios   = require('axios');
+const crypto = require('crypto');
+const axios  = require('axios');
 
 const PAYSTACK_BASE = 'https://api.paystack.co';
 const headers = () => ({
@@ -11,30 +11,42 @@ const initializePayment = async (email, amountNaira, metadata = {}) => {
   const { generateReference } = require('../utils/helpers');
   const reference = generateReference();
 
-const res = await axios.post(
-  `${PAYSTACK_BASE}/transaction/initialize`,
-  {
-    email,
-    amount:       amountNaira * 100,
-    reference,
-    metadata,
-    callback_url: `${process.env.BASE_URL}/payment/callback`,
-  },
-  { headers: headers() }
-).catch((err) => {
-  console.error('[PAYSTACK] Full error:', JSON.stringify(err.response?.data));
-  console.error('[PAYSTACK] Request body sent:', JSON.stringify({
-    email,
-    amount: amountNaira * 100,
-    reference,
-  }));
-  throw err;
-});
+  const res = await axios.post(
+    `${PAYSTACK_BASE}/transaction/initialize`,
+    {
+      email,
+      amount:       amountNaira * 100,
+      reference,
+      metadata,
+      callback_url: `${process.env.BASE_URL}/payment/callback`,
+    },
+    { headers: headers() }
+  ).catch((err) => {
+    console.error('[PAYSTACK] Full error:', JSON.stringify(err.response?.data));
+    console.error('[PAYSTACK] Request body sent:', JSON.stringify({
+      email, amount: amountNaira * 100, reference,
+    }));
+    throw err;
+  });
 
-  return {
-    url:       res.data.data.authorization_url,
-    reference,
-  };
+  return { url: res.data.data.authorization_url, reference };
+};
+
+// ── Verify a transaction directly with Paystack ───────────
+// Used when user says "I have paid" as a fallback check
+const verifyPayment = async (reference) => {
+  try {
+    const res = await axios.get(
+      `${PAYSTACK_BASE}/transaction/verify/${reference}`,
+      { headers: headers() }
+    );
+    const data = res.data?.data;
+    if (data?.status === 'success') return data;
+    return null;
+  } catch (err) {
+    console.error('[PAYSTACK] Verify error:', err.message);
+    return null;
+  }
 };
 
 const verifySignature = (rawBody, signature) => {
@@ -53,7 +65,7 @@ const handlePaystackWebhook = async (req, res) => {
     return res.sendStatus(400);
   }
 
-  res.sendStatus(200); // Acknowledge immediately
+  res.sendStatus(200);
 
   try {
     const event = JSON.parse(req.body);
@@ -77,4 +89,9 @@ const handlePaystackWebhook = async (req, res) => {
   }
 };
 
-module.exports = { initializePayment, verifySignature, handlePaystackWebhook };
+module.exports = {
+  initializePayment,
+  verifyPayment,
+  verifySignature,
+  handlePaystackWebhook,
+};

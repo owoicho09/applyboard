@@ -649,27 +649,82 @@ textarea.form-control{resize:vertical;min-height:80px}
         </div>
 
         <!-- DIRECT MESSAGE -->
-        <div class="section" id="section-message">
-          <div class="section-header"><h2>Direct Message</h2></div>
-          <div class="card" style="max-width:480px">
-            <div class="card-header"><span class="card-title">Send to a Contact</span></div>
-            <div style="padding:18px">
-              <div class="form-group">
-                <label class="form-label">Contact Number</label>
-                <input class="form-control" id="dm-phone" placeholder="+2349165092953 or tg_12345678">
-                <div style="font-size:11px;color:var(--text-3);margin-top:4px">WhatsApp: +234... — Telegram: tg_chatid</div>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Message</label>
-                <textarea class="form-control" id="dm-message" rows="4" placeholder="Type your message..."></textarea>
-              </div>
-              <button class="btn btn-primary" onclick="sendDM()">
-                <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                Send Message
-              </button>
-            </div>
+<div class="section" id="section-message">
+  <div class="section-header"><h2>Direct Message</h2></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+
+    <!-- Send to individual -->
+    <div class="card">
+      <div class="card-header"><span class="card-title">Send to a Contact</span></div>
+      <div style="padding:18px">
+        <div class="form-group">
+          <label class="form-label">Contact Number</label>
+          <input class="form-control" id="dm-phone" placeholder="+2349165092953 or tg_12345678">
+          <div style="font-size:11px;color:var(--text-3);margin-top:4px">WhatsApp: +234... — Telegram: tg_chatid</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Message</label>
+          <textarea class="form-control" id="dm-message" rows="4" placeholder="Type your message..."></textarea>
+        </div>
+        <button class="btn btn-primary" onclick="sendDM()">
+          <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          Send Message
+        </button>
+      </div>
+    </div>
+
+    <!-- Send to Telegram group -->
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Send to Telegram Group</span>
+        <span class="badge bg-green">Live Group</span>
+      </div>
+      <div style="padding:18px">
+        <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--text-2)">
+          This sends directly to the ApplyBoard Africa Telegram group. Use for announcements, CTAs, and updates. All 900+ members will see it.
+        </div>
+        <div class="form-group">
+          <label class="form-label">Message</label>
+          <textarea class="form-control" id="group-message" rows="5"
+            placeholder="Type your group message..."
+            oninput="document.getElementById('group-chars').textContent=this.value.length"></textarea>
+          <div style="font-size:11px;color:var(--text-3);text-align:right;margin-top:3px">
+            <span id="group-chars">0</span> characters
           </div>
         </div>
+
+        <!-- Quick templates -->
+        <div class="form-group">
+          <label class="form-label">Quick Templates</label>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <button class="btn btn-secondary btn-sm" style="text-align:left;justify-content:flex-start"
+              onclick="setGroupTemplate('bot_cta')">
+              Bot CTA — Drive members to message the bot
+            </button>
+            <button class="btn btn-secondary btn-sm" style="text-align:left;justify-content:flex-start"
+              onclick="setGroupTemplate('ielts')">
+              IELTS batch announcement
+            </button>
+            <button class="btn btn-secondary btn-sm" style="text-align:left;justify-content:flex-start"
+              onclick="setGroupTemplate('canada')">
+              Canada intake reminder
+            </button>
+            <button class="btn btn-secondary btn-sm" style="text-align:left;justify-content:flex-start"
+              onclick="setGroupTemplate('general')">
+              General update
+            </button>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" onclick="sendGroupMessage()" id="group-send-btn">
+          <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          Send to Group
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
 
       </div>
     </div>
@@ -1520,6 +1575,45 @@ const fmtDate = (iso) => {
 // ── TABLE HELPERS ─────────────────────────────────────────
 const emptyRow = (cols, msg) => `<tr><td colspan="${cols}"><div class="empty-state"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg><p>${msg}</p></div></td></tr>`;
 const errorRow = (cols, msg) => `<tr><td colspan="${cols}"><div style="padding:16px;color:var(--danger);font-size:13px;text-align:center">Error: ${msg}</div></td></tr>`;
+// ── GROUP MESSAGE ─────────────────────────────────────────
+const TEMPLATES = {
+  bot_cta:  `Our AI advisor is live and ready to help you plan your study abroad journey.\n\nWhether you are thinking about Canada, UK, Germany, Australia or anywhere else — message the bot directly and get a personalised plan.\n\nStart here → @ApplyBoardbot`,
+  ielts:    `New IELTS preparation batch starting soon.\n\nIntensive 6-week programme with score guarantee. Morning, evening and weekend slots available.\n\nMessage @ApplyBoardbot to reserve your spot.`,
+  canada:   `September 2026 Canada intake applications are now open.\n\nCanadian universities are actively accepting Nigerian students. Processing time is 4 to 8 weeks.\n\nMessage @ApplyBoardbot to start your application today.`,
+  general:  `Update from ApplyBoard Africa.\n\nIf you have questions about studying abroad, visa processing, study loans, or test preparation — our AI advisor is available 24/7.\n\nMessage @ApplyBoardbot anytime.`,
+};
+
+const setGroupTemplate = (key) => {
+  const msg = TEMPLATES[key];
+  if (msg) {
+    document.getElementById('group-message').value = msg;
+    document.getElementById('group-chars').textContent = msg.length;
+  }
+};
+
+const sendGroupMessage = async () => {
+  const message = document.getElementById('group-message').value.trim();
+  if (!message) { toast('Please write a message', 'error'); return; }
+  if (!confirm('Send this message to the entire Telegram group?')) return;
+
+  const btn = document.getElementById('group-send-btn');
+  btn.disabled = true; btn.textContent = 'Sending...';
+
+  try {
+    await api('/admin/api/group-message', {
+      method: 'POST',
+      body:   JSON.stringify({ message }),
+    });
+    toast('Message sent to group successfully', 'success');
+    document.getElementById('group-message').value = '';
+    document.getElementById('group-chars').textContent = '0';
+  } catch(e) {
+    toast('Failed: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Send to Group`;
+  }
+};
 </script>
 </body>
 </html>
