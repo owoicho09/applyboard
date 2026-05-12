@@ -119,8 +119,15 @@ const handleText = async (from, text, state, message) => {
 
     // Send the AI message first
     if (cleanReply) {
-      await sendText(from, cleanReply);
-    }
+  if (state.stage === STAGES.PAYMENT_AWAITING) {
+    const { sendButtons } = require('../services/messenger');
+    await sendButtons(from, cleanReply, [
+      { id: 'PAY_NOW', label: '💳 Pay Registration Fee' }
+    ]);
+  } else {
+    await sendText(from, cleanReply);
+  }
+}
 
     // Then immediately send the payment link if flagged
     if (shouldSendPayment && state.stage !== STAGES.PAYMENT_AWAITING) {

@@ -416,7 +416,19 @@ router.post('/api/message', express.json(), async (req, res) => {
     const { phone, message } = req.body;
     if (!phone || !message) return res.status(400).json({ error: 'Phone and message required' });
 
-    await sendText(phone, message);
+    const { data: lead } = await supabase
+      .from('leads')
+      .select('payment_status')
+      .eq('phone_number', phone)
+      .single();
+
+    if (lead?.payment_status === 'pending') {
+      await sendButtons(phone, message, [
+        { id: 'PAY_NOW', label: '💳 Pay Registration Fee' }
+      ]);
+    } else {
+      await sendText(phone, message);
+    }
 
     await supabase.from('conversations').insert({
       phone_number: phone,
@@ -430,7 +442,6 @@ router.post('/api/message', express.json(), async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
 // ════════════════════════════════════════════════════════
 // LEAD ACTIVITY LOG
 // ════════════════════════════════════════════════════════
