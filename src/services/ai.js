@@ -131,13 +131,23 @@ const askAI = async (phone, userMessage, state) => {
     const fullContext       = (sessionContext + persistentContext).trim();
 
     const history  = buildHistory(state);
-    const messages = [
-      ...history,
-      {
-        role:    'user',
-        content: fullContext ? `${userMessage}\n\n${fullContext}` : userMessage,
-      },
-    ];
+    const today = new Date().toLocaleDateString('en-NG', {
+  weekday: 'long',
+  year:    'numeric',
+  month:   'long',
+  day:     'numeric',
+  timeZone: 'Africa/Lagos'
+});
+
+const messages = [
+  ...history,
+  {
+    role:    'user',
+    content: fullContext
+      ? `${userMessage}\n\n${fullContext}\nToday's date: ${today}`
+      : `${userMessage}\n\nToday's date: ${today}`,
+  },
+]
 
     const response = await client.messages.create({
       model:      MODEL,
