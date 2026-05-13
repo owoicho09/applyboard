@@ -442,6 +442,37 @@ router.post('/api/message', express.json(), async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// ════════════════════════════════════════════════════════
+// GROUP MESSAGE
+// ════════════════════════════════════════════════════════
+router.post('/api/group-message', express.json(), async (req, res) => {
+  try {
+    const { message } = req.body;
+    if (!message) return res.status(400).json({ error: 'Message required' });
+
+    const GROUP_ID = process.env.TELEGRAM_GROUP_ID;
+    if (!GROUP_ID) return res.status(500).json({ error: 'TELEGRAM_GROUP_ID not set' });
+
+    const axios = require('axios');
+    await axios.post(
+      `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`,
+      {
+        chat_id:                  GROUP_ID,
+        text:                     message,
+        disable_web_page_preview: true,
+      },
+      { headers: { 'Content-Type': 'application/json' } }
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error('[ADMIN] Group message error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 // ════════════════════════════════════════════════════════
 // LEAD ACTIVITY LOG
 // ════════════════════════════════════════════════════════
