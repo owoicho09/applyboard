@@ -1,8 +1,8 @@
-const { sendText }           = require('../services/messenger');
-const { getState, setState } = require('../utils/stateManager');
-const { STAGES, MESSAGES }   = require('../config/constants');
-const { sanitizeText }       = require('../utils/validators');
-const { updateLead }         = require('../services/leadService');
+const { sendText, sendButtons } = require('../services/messenger');
+const { getState, setState }    = require('../utils/stateManager');
+const { STAGES, MESSAGES }      = require('../config/constants');
+const { sanitizeText }          = require('../utils/validators');
+const { updateLead }            = require('../services/leadService');
 
 const HARD_TRIGGERS = {
   menu:  ['menu', 'main menu', 'home', 'restart', 'start over'],
@@ -103,7 +103,16 @@ const handleText = async (from, text, state, message) => {
     return sendGreeting(from, state.data?.name);
   }
 
-  // ── 5. AI handles everything ──────────────────────────
+  // ── 5. Payment awaiting — intercept before AI ─────────
+  if (state.stage === STAGES.PAYMENT_AWAITING) {
+    return sendButtons(
+      from,
+      `Your payment link is ready and waiting. Tap the button below to generate a fresh one and complete your registration 👇`,
+      [{ id: 'PAY_NOW', title: '💳 Generate Payment Link' }]
+    );
+  }
+
+  // ── 6. AI handles everything ──────────────────────────
   try {
     const { askAI } = require('../services/ai');
 
@@ -119,15 +128,8 @@ const handleText = async (from, text, state, message) => {
 
     // Send the AI message first
     if (cleanReply) {
-  if (state.stage === STAGES.PAYMENT_AWAITING) {
-    const { sendButtons } = require('../services/messenger');
-    await sendButtons(from, cleanReply, [
-      { id: 'PAY_NOW', title: '💳 Regenerate payment link' }
-    ]);
-  } else {
-    await sendText(from, cleanReply);
-  }
-}
+      await sendText(from, cleanReply);
+    }
 
     // Then immediately send the payment link if flagged
     if (shouldSendPayment && state.stage !== STAGES.PAYMENT_AWAITING) {

@@ -12,7 +12,6 @@ const handlePayment = async (from, action, state) => {
   const service = state.data?.service || 'ApplyBoard Africa';
 
   // ── Generate Paystack link immediately ────────────────
-  // No method selection — Paystack handles card, bank, USSD etc
   if (action === 'REGISTRATION' || action === 'START' || action === BTN.PAY_NOW) {
     try {
       const { initializePayment } = require('../services/paystack');
@@ -84,8 +83,19 @@ const onPaymentConfirmed = async (phone, amount, reference) => {
       `Payment confirmed. You are in.\n\nReference: ${reference}\n\nNext step — book your session with our team directly here:\n\nhttps://calendly.com/applyboardafrica-info/new-meeting\n\nPick a time that works for you and they will be ready with everything they need about your case.`
     );
 
+    // ── Notify owner of confirmed payment ────────────────
+    try {
+      const { notifyOwner } = require('../services/notifyOwner');
+      const { getLead }     = require('../services/leadService');
+      const lead            = await getLead(phone);
+      await notifyOwner(
+        `💰 *Payment Confirmed*\n\nName: ${lead?.name || 'Unknown'}\nPhone: ${phone}\nAmount: ₦${Number(amount).toLocaleString('en-NG')}\nReference: ${reference}\nTime: ${new Date().toLocaleTimeString('en-NG', { timeZone: 'Africa/Lagos' })} WAT`
+      );
+    } catch (e) {
+      console.error('[PAYMENT] notify error:', e.message);
+    }
+
     // Route to the right staff member with full brief
-    const { getState }    = require('../utils/stateManager');
     const { notifyStaff } = require('../services/notificationService');
     const state           = await getState(phone);
     await notifyStaff(phone, state);

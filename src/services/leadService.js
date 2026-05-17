@@ -17,6 +17,16 @@ const upsertLead = async (phone, data = {}) => {
       await supabase
         .from('leads')
         .insert({ phone_number: phone, last_interaction: new Date().toISOString(), ...data });
+
+      // ── Notify owner of new lead ──────────────────────
+      try {
+        const { notifyOwner } = require('./notifyOwner');
+        await notifyOwner(
+          `🆕 *New Lead*\n\nName: ${data.name || 'Unknown'}\nPhone: ${phone}\nSource: ${data.source || 'Telegram'}\nTime: ${new Date().toLocaleTimeString('en-NG', { timeZone: 'Africa/Lagos' })} WAT`
+        );
+      } catch (e) {
+        console.error('[LEAD SERVICE] notify error:', e.message);
+      }
     }
   } catch (err) {
     console.error('[LEAD SERVICE] upsertLead error:', err.message);
@@ -57,11 +67,11 @@ const logMessage = async (phone, direction, type, content, waId = null) => {
       .single();
 
     await supabase.from('conversations').insert({
-      lead_id:      lead?.id || null,
-      phone_number: phone,
+      lead_id:       lead?.id || null,
+      phone_number:  phone,
       direction,
-      message_type: type,
-      content:      content?.slice(0, 4096) || '',
+      message_type:  type,
+      content:       content?.slice(0, 4096) || '',
       wa_message_id: waId,
     });
   } catch (err) {
