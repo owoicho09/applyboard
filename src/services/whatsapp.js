@@ -1,7 +1,8 @@
 const axios = require('axios');
 
 const API_URL = () =>
-  `https://graph.facebook.com/v19.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`;
+  `https://graph.facebook.com/v25.0/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`;
+
 
 const authHeaders = () => ({
   Authorization:  `Bearer ${process.env.WHATSAPP_TOKEN}`,
