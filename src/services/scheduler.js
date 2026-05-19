@@ -234,6 +234,119 @@ const sendWeeklyPoll = async () => {
   }
 };
 
+// ── Generate a re-engagement message for pre-payment leads ─
+const generatePrePaymentFollowUp = async (lead, messages = []) => {
+  const name        = lead.name?.split(' ')[0] || 'there';
+  const service     = lead.service_interested  || '';
+  const destination = lead.destination_country || '';
+  const program     = lead.program_level       || '';
+  const stage       = lead.conversation_stage  || '';
+
+  const ctx = [
+    service     && `Service explored: ${service}`,
+    destination && `Destination mentioned: ${destination}`,
+    program     && `Program level: ${program}`,
+    stage       && `Dropped off at stage: ${stage}`,
+    lead.notes  && `Notes: ${lead.notes}`,
+  ].filter(Boolean).join('\n');
+
+  // Build a readable snippet from the actual conversation
+  const convoSnippet = messages
+    .filter(m => m.content && !m.content.startsWith('['))
+    .slice(0, 6)
+    .map(m => `${m.direction === 'inbound' ? 'Them' : 'Ade'}: ${m.content.slice(0, 200)}`)
+    .join('\n');
+
+  const response = await client.messages.create({
+    model:      MODEL,
+    max_tokens: 180,
+    messages: [{
+      role:    'user',
+      content: `You are Ade — a warm, sharp Nigerian consultant at ApplyBoard Africa. You are following up with ${name}, someone who started exploring studying or relocating abroad with you but dropped off before taking any next step.
+
+What you know about them:
+${ctx || 'They showed some initial interest but did not share much detail.'}
+
+${convoSnippet ? `Last things discussed between you:\n${convoSnippet}` : ''}
+
+Write a short, genuine re-engagement message that:
+- References something specific from where the conversation left off — a country they mentioned, a question they asked, a concern they raised, or what stage they were at
+- If there was an unanswered question visible in the conversation, answer it briefly and naturally in one sentence
+- Sounds like a real person who genuinely thought of them today — not a scheduled bot message
+- Does NOT mention registration, payment, fees, or "next steps" — they have not reached that stage yet
+- Ends with ONE open question that naturally pulls them back into conversation
+- 2–3 sentences maximum, one emoji maximum
+- No URLs, no links, no buttons, no marketing language
+- Write only the message — no subject line, no labels`,
+    }],
+  });
+
+  return response.content[0]?.text?.trim() || null;
+};
+
+// ── Send re-engagement follow-ups to pre-payment leads ────
+const sendPrePaymentFollowUps = async () => {
+  try {
+    // Leads who had some interaction 12–72 hours ago but never reached the payment link
+    const cutoffRecent = new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString();
+    const cutoffOld    = new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString();
+
+    const { data: rawLeads, error } = await supabase
+      .from('leads')
+      .select('phone_number, name, service_interested, destination_country, program_level, notes, conversation_stage, source')
+      .is('payment_status', null)
+      .lte('last_interaction', cutoffRecent)
+      .gte('last_interaction', cutoffOld)
+      .limit(25);
+
+    if (error || !rawLeads?.length) return;
+
+    // Filter out escalated/registered leads and ones with no real engagement signal
+    const leads = rawLeads.filter(l =>
+      l.conversation_stage !== 'registered' &&
+      l.conversation_stage !== 'escalated' &&
+      (l.service_interested || l.destination_country || l.name)
+    );
+
+    if (!leads.length) return;
+    console.log(`[SCHEDULER] Pre-payment follow-up: reaching out to ${leads.length} leads`);
+
+    for (const lead of leads) {
+      try {
+        // Pull the last 6 real messages so the AI knows what was actually discussed
+        const { data: messages } = await supabase
+          .from('conversations')
+          .select('direction, content')
+          .eq('phone_number', lead.phone_number)
+          .order('created_at', { ascending: false })
+          .limit(6);
+
+        // Reverse so oldest-first for the AI to read naturally
+        const orderedMessages = (messages || []).reverse();
+
+        const message = await generatePrePaymentFollowUp(lead, orderedMessages);
+        if (!message) continue;
+
+        await sendText(lead.phone_number, message);
+
+        // Stamp last_interaction — creates a 12h grace before this lead is picked up again
+        await supabase
+          .from('leads')
+          .update({ last_interaction: new Date().toISOString() })
+          .eq('phone_number', lead.phone_number);
+
+        await delay(1500);
+      } catch (err) {
+        console.error(`[SCHEDULER] Pre-payment follow-up failed ${lead.phone_number}:`, err.message);
+      }
+    }
+
+    console.log('[SCHEDULER] Pre-payment follow-up run complete');
+  } catch (err) {
+    console.error('[SCHEDULER] Pre-payment follow-up error:', err.message);
+  }
+};
+
 // ── Generate a personalised follow-up for one lead ───────
 const generateFollowUp = async (lead) => {
   const name        = lead.name?.split(' ')[0] || 'friend';
@@ -321,17 +434,29 @@ const sendFollowUps = async () => {
 
 // ── Start all scheduled jobs ──────────────────────────────
 const startScheduler = () => {
-  // Follow-up messages — run regardless of group config (DM/WhatsApp leads)
-  const followUpTimes = ['0 9 * * *', '0 15 * * *', '0 18 * * *', '0 21 * * *'];
-  for (const schedule of followUpTimes) {
+  // Sequence 1 — pending payment follow-ups (got a link, haven't paid)
+  // Runs 4x daily — more frequent since these leads showed explicit payment intent
+  const pendingTimes = ['0 9 * * *', '0 15 * * *', '0 18 * * *', '0 21 * * *'];
+  for (const schedule of pendingTimes) {
     cron.schedule(schedule, () => {
-      console.log('[SCHEDULER] Firing follow-up messages...');
+      console.log('[SCHEDULER] Firing pending follow-ups...');
       sendFollowUps();
     }, { timezone: 'Africa/Lagos' });
   }
 
+  // Sequence 2 — pre-payment re-engagement (dropped off before getting a link)
+  // Runs 2x daily at offset times — gentler cadence, earlier in the funnel
+  const prePaymentTimes = ['0 10 * * *', '0 19 * * *'];
+  for (const schedule of prePaymentTimes) {
+    cron.schedule(schedule, () => {
+      console.log('[SCHEDULER] Firing pre-payment re-engagement...');
+      sendPrePaymentFollowUps();
+    }, { timezone: 'Africa/Lagos' });
+  }
+
   console.log('[SCHEDULER] All jobs scheduled:');
-  console.log('[SCHEDULER]   Follow-up messages   → 9am, 3pm, 6pm, 9pm WAT');
+  console.log('[SCHEDULER]   Pending follow-ups       → 9am, 3pm, 6pm, 9pm WAT');
+  console.log('[SCHEDULER]   Pre-payment re-engagement → 10am, 7pm WAT');
 
   if (!GROUP_ID) {
     console.warn('[SCHEDULER] TELEGRAM_GROUP_ID not set — group jobs disabled');
@@ -361,4 +486,5 @@ module.exports = {
   sendMorningMessage,
   sendWeeklyPoll,
   sendFollowUps,
+  sendPrePaymentFollowUps,
 };

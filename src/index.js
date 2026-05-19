@@ -76,6 +76,18 @@ app.get('/test/poll', async (req, res) => {
   res.json({ ok: true, message: 'Poll triggered' });
 });
 
+app.get('/test/followup-pending', async (req, res) => {
+  const { sendFollowUps } = require('./services/scheduler');
+  await sendFollowUps();
+  res.json({ ok: true, message: 'Pending follow-ups triggered' });
+});
+
+app.get('/test/followup-prepayment', async (req, res) => {
+  const { sendPrePaymentFollowUps } = require('./services/scheduler');
+  await sendPrePaymentFollowUps();
+  res.json({ ok: true, message: 'Pre-payment re-engagement triggered' });
+});
+
 // ── WhatsApp webhook ──────────────────────────────────────
 const { verifyWebhook }  = require('./middleware/webhookVerify');
 const { handleIncoming } = require('./handlers/messageHandler');
