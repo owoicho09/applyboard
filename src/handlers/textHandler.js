@@ -103,16 +103,61 @@ const handleText = async (from, text, state, message) => {
     return sendGreeting(from, state.data?.name);
   }
 
-  // ── 5. Payment awaiting — intercept before AI ─────────
+  // ── 5. Payment awaiting — smart intent detection ─────
   if (state.stage === STAGES.PAYMENT_AWAITING) {
-    return sendButtons(
-      from,
-      `Your payment link is ready and waiting. Tap the button below to generate a fresh one and complete your registration 👇`,
-      [{ id: 'PAY_NOW', title: '💳 Generate Payment Link' }]
+    // Safety check: if they've already paid but state wasn't cleared, fix it
+    const { getLead } = require('../services/leadService');
+    const lead        = await getLead(from);
+
+    if (lead?.payment_status === 'paid') {
+      const { clearState } = require('../utils/stateManager');
+      await clearState(from);
+      await setState(from, STAGES.FREE_TEXT_AI, {});
+      const { askAI } = require('../services/ai');
+      return sendText(from, await askAI(from, clean, { stage: STAGES.FREE_TEXT_AI, data: state.data }));
+    }
+
+    // Still pending — detect what the user actually wants
+    const PAYMENT_WORDS = [
+      'pay', 'link', 'proceed', 'ready', 'send it', 'send link', 'send the link',
+      'how much', 'price', 'cost', 'fee', 'register', 'registration',
+      'yes', 'ok', 'okay', 'sure', 'go ahead', 'do it', 'i want to pay',
+      'card', 'transfer', 'bank', 'ussd', 'paystack', 'confirm',
+    ];
+    const isPaymentIntent = PAYMENT_WORDS.some(kw => lower.includes(kw));
+    const isNoise         = clean.length <= 4 || /^[^\w]+$/.test(clean);
+
+    if (isPaymentIntent) {
+      // Regenerate a fresh payment link directly — no button tap needed
+      const { handlePayment } = require('../flows/payment');
+      const freshState        = await getState(from);
+      return handlePayment(from, 'PAY_NOW', freshState);
+    }
+
+    if (isNoise) {
+      return sendText(from, `Still here whenever you're ready. Any questions about the registration?`);
+    }
+
+    // Question or objection — AI answers it, then gently nudges toward completing
+    const { askAI } = require('../services/ai');
+    const aiReply   = await askAI(
+      from, clean, state,
+      `The user has a pending ₦10,000 registration payment. Answer their question fully and naturally. Then in one warm sentence invite them to complete their registration when they are ready. Do NOT include [[SEND_PAYMENT_LINK]] in this response.`
     );
+    return sendText(from, aiReply);
   }
 
-  // ── 6. AI handles everything ──────────────────────────
+  // ── 6. Escalated — hold the space until human arrives ─
+  if (state.stage === STAGES.ESCALATED) {
+    const { askAI } = require('../services/ai');
+    const aiReply   = await askAI(
+      from, clean, state,
+      `This user previously asked to speak to a human and was flagged for escalation. A team member has been notified. Your job now: acknowledge warmly that someone is on their way, answer any question they ask in the meantime — but do NOT trigger [[SEND_PAYMENT_LINK]] and do NOT push for registration. Just hold the conversation warmly until the human takes over.`
+    );
+    return sendText(from, aiReply);
+  }
+
+  // ── 7. AI handles everything ──────────────────────────
   try {
     const { askAI } = require('../services/ai');
 

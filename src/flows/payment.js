@@ -100,6 +100,15 @@ const onPaymentConfirmed = async (phone, amount, reference) => {
     const state           = await getState(phone);
     await notifyStaff(phone, state);
 
+    // Clear payment-awaiting state so user can converse normally after paying
+    try {
+      const { clearState } = require('../utils/stateManager');
+      await clearState(phone);
+      await setState(phone, STAGES.FREE_TEXT_AI, {});
+    } catch (e) {
+      console.error('[PAYMENT] State reset error:', e.message);
+    }
+
   } catch (err) {
     console.error('[PAYMENT] Post-confirmation error:', err.message);
   }

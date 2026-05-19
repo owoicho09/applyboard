@@ -7,7 +7,7 @@ const sendMainMenu = async (from) => {
 
   await sendList(
     from,
-    MESSAGES.mainMenuHeader,
+    `Here's everything we can help you with — pick a service or just type your question.`,
     'View Services',
     [
       {

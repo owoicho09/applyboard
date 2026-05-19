@@ -185,13 +185,9 @@ app.listen(PORT, () => {
       .catch((err) => console.error('[TELEGRAM] Webhook registration failed:', err.message));
   }
 
-  // ── Start group scheduler ─────────────────────────────
-  if (process.env.TELEGRAM_GROUP_ID) {
-    const { startScheduler } = require('./services/scheduler');
-    startScheduler();
-  } else {
-    console.warn('[SCHEDULER] TELEGRAM_GROUP_ID not set — group features disabled');
-  }
+  // ── Start scheduler (follow-ups always; group jobs if GROUP_ID set) ──
+  const { startScheduler } = require('./services/scheduler');
+  startScheduler();
 });
 
 module.exports = app;

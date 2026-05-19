@@ -2,7 +2,6 @@ const { sendButtons, sendList, sendText } = require('../services/messenger');
 const { setState, updateData }            = require('../utils/stateManager');
 const { updateLead }                      = require('../services/leadService');
 const { STAGES, BTN }                     = require('../config/constants');
-const { startConsultation }               = require('./consultation');
 
 const VISA_TYPES = {
   [BTN.VT_STUDY]:    'Study Visa',
@@ -79,28 +78,23 @@ const handleVisa = async (from, action, state) => {
     );
   }
 
-  // ── Step 3: Destination → info + push consult ─────────
+  // ── Step 3: Destination → AI picks up with collected context ──
   if (VISA_DESTINATIONS[action]) {
     const destination = VISA_DESTINATIONS[action];
     const visaType    = state.data?.visa_type || 'Visa';
 
-    await updateData(from, { destination });
+    await updateData(from, { destination, service: 'visa' });
     await updateLead(from, { destination_country: destination, conversation_stage: 'qualified' });
+    await setState(from, STAGES.FREE_TEXT_AI);
 
-    await sendText(
+    const { askAI } = require('../services/ai');
+    const aiReply   = await askAI(
       from,
-      `✅ *${visaType} — ${destination}*\n\n` +
-      `What we handle for you:\n` +
-      `✔ Document checklist & review\n` +
-      `✔ Application form completion\n` +
-      `✔ Embassy appointment booking\n` +
-      `✔ Biometrics scheduling\n` +
-      `✔ Interview preparation (if required)\n\n` +
-      `📊 *95%+ success rate | 10+ years experience*\n\n` +
-      `Let's book your FREE consultation to get started!`
+      `${visaType} to ${destination}.`,
+      { stage: STAGES.FREE_TEXT_AI, data: { ...state.data, destination, service: 'visa' } },
+      `The user needs a ${visaType} for ${destination}. You know this — do NOT repeat it back. Give them one sharp, specific thing a Nigerian applicant needs to know about this visa right now: processing time, a common rejection reason, a document most people overlook, or a current policy update that affects them. Then naturally invite them to get their case moving with the ₦10,000 registration. Under 4 sentences. No bullet points. Sound like Ade.`
     );
-
-    return startConsultation(from, state);
+    return sendText(from, aiReply);
   }
 };
 

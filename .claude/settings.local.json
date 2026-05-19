@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\HP\\\\Desktop\\\\Projects\\\\applyboard-bot\" -Force -ErrorAction SilentlyContinue)",
+      "Bash(Select-Object -ExpandProperty Name)"
+    ]
+  }
+}

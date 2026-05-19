@@ -1,6 +1,9 @@
 const cron      = require('node-cron');
 const Anthropic = require('@anthropic-ai/sdk');
 const axios     = require('axios');
+const supabase  = require('../config/database');
+const { sendText } = require('./messenger');
+const { delay }    = require('../utils/helpers');
 
 const client   = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const GROUP_ID = process.env.TELEGRAM_GROUP_ID;
@@ -231,10 +234,107 @@ const sendWeeklyPoll = async () => {
   }
 };
 
+// ── Generate a personalised follow-up for one lead ───────
+const generateFollowUp = async (lead) => {
+  const name        = lead.name?.split(' ')[0] || 'friend';
+  const service     = lead.service_interested  || '';
+  const destination = lead.destination_country || '';
+  const program     = lead.program_level       || '';
+  const exam        = lead.test_prep_exam      || '';
+
+  const ctx = [
+    service     && `Service they asked about: ${service}`,
+    destination && `Destination: ${destination}`,
+    program     && `Program level: ${program}`,
+    exam        && `Exam: ${exam}`,
+    lead.notes  && `Notes from conversation: ${lead.notes}`,
+  ].filter(Boolean).join('\n');
+
+  const response = await client.messages.create({
+    model:      MODEL,
+    max_tokens: 180,
+    messages: [{
+      role:    'user',
+      content: `You are Ade — a warm, sharp Nigerian consultant at ApplyBoard Africa. You are checking in with ${name}, a potential client who showed real interest in studying or relocating abroad but never completed their registration.
+
+What you know about them:
+${ctx || 'They were interested in our services but did not specify further.'}
+
+Write a short follow-up message that:
+- Sounds exactly like a genuine friend checking in, NOT a reminder bot or sales script
+- References their specific situation naturally (service, destination, or exam if known)
+- If the notes suggest a concern or question they raised, address it warmly in 1 sentence
+- 2–3 sentences total, conversational tone, one emoji maximum
+- Ends with a soft, warm question or invitation — not "click the link below" or "pay now"
+- Makes them feel seen and remembered, not chased
+- Does NOT include any URLs, payment links, or button instructions
+- Write the message text only — no subject line, no formatting labels`,
+    }],
+  });
+
+  return response.content[0]?.text?.trim() || null;
+};
+
+// ── Send follow-ups to leads with pending payment ─────────
+const sendFollowUps = async () => {
+  try {
+    // Target leads whose last interaction was between 4 and 36 hours ago
+    const cutoffRecent = new Date(Date.now() - 4  * 60 * 60 * 1000).toISOString();
+    const cutoffOld    = new Date(Date.now() - 36 * 60 * 60 * 1000).toISOString();
+
+    const { data: leads, error } = await supabase
+      .from('leads')
+      .select('phone_number, name, service_interested, destination_country, program_level, notes, test_prep_exam')
+      .eq('payment_status', 'pending')
+      .lte('last_interaction', cutoffRecent)
+      .gte('last_interaction', cutoffOld)
+      .limit(30);
+
+    if (error || !leads?.length) return;
+
+    console.log(`[SCHEDULER] Follow-up: reaching out to ${leads.length} leads`);
+
+    for (const lead of leads) {
+      try {
+        const message = await generateFollowUp(lead);
+        if (!message) continue;
+
+        await sendText(lead.phone_number, message);
+
+        // Stamp last_interaction so this lead is skipped on the next run (4h grace)
+        await supabase
+          .from('leads')
+          .update({ last_interaction: new Date().toISOString() })
+          .eq('phone_number', lead.phone_number);
+
+        await delay(1500);
+      } catch (err) {
+        console.error(`[SCHEDULER] Follow-up failed ${lead.phone_number}:`, err.message);
+      }
+    }
+
+    console.log('[SCHEDULER] Follow-up run complete');
+  } catch (err) {
+    console.error('[SCHEDULER] Follow-up error:', err.message);
+  }
+};
+
 // ── Start all scheduled jobs ──────────────────────────────
 const startScheduler = () => {
+  // Follow-up messages — run regardless of group config (DM/WhatsApp leads)
+  const followUpTimes = ['0 9 * * *', '0 15 * * *', '0 18 * * *', '0 21 * * *'];
+  for (const schedule of followUpTimes) {
+    cron.schedule(schedule, () => {
+      console.log('[SCHEDULER] Firing follow-up messages...');
+      sendFollowUps();
+    }, { timezone: 'Africa/Lagos' });
+  }
+
+  console.log('[SCHEDULER] All jobs scheduled:');
+  console.log('[SCHEDULER]   Follow-up messages   → 9am, 3pm, 6pm, 9pm WAT');
+
   if (!GROUP_ID) {
-    console.warn('[SCHEDULER] TELEGRAM_GROUP_ID not set — scheduler disabled');
+    console.warn('[SCHEDULER] TELEGRAM_GROUP_ID not set — group jobs disabled');
     return;
   }
 
@@ -250,7 +350,6 @@ const startScheduler = () => {
     sendWeeklyPoll();
   }, { timezone: 'Africa/Lagos' });
 
-  console.log('[SCHEDULER] All jobs scheduled:');
   console.log('[SCHEDULER]   Daily morning message → 8:00 AM WAT');
   console.log('[SCHEDULER]   Weekly poll           → Monday 9:00 AM WAT');
   console.log('[SCHEDULER]   Welcome new members   → on join event');
@@ -261,4 +360,5 @@ module.exports = {
   sendWelcomeMessage,
   sendMorningMessage,
   sendWeeklyPoll,
+  sendFollowUps,
 };

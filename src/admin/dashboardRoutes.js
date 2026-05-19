@@ -347,6 +347,14 @@ router.put('/api/payments/:id/confirm', express.json(), async (req, res) => {
         payment.phone_number,
         `Payment confirmed. You are in.\n\nAmount: ₦${Number(payment.amount).toLocaleString('en-NG')}\nReference: ${payment.reference}\n\nSomeone from our team will be in touch shortly.`
       ).catch(() => {});
+
+      // Clear payment-awaiting state so user can converse normally
+      try {
+        const { clearState, setState } = require('../utils/stateManager');
+        const { STAGES }               = require('../config/constants');
+        await clearState(payment.phone_number);
+        await setState(payment.phone_number, STAGES.FREE_TEXT_AI, {});
+      } catch (e) { /* non-critical — state TTL will eventually expire */ }
     }
 
     res.json({ success: true, data: payment });

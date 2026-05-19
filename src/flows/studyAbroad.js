@@ -2,8 +2,6 @@ const { sendButtons, sendList, sendText } = require('../services/messenger');
 const { setState, updateData }            = require('../utils/stateManager');
 const { updateLead }                      = require('../services/leadService');
 const { STAGES, BTN }                     = require('../config/constants');
-const { startConsultation }               = require('./consultation');
-const { documentChecklist, statsBlock }   = require('../utils/messageTemplates');
 
 const DESTINATIONS = {
   [BTN.SA_CANADA]:  'Canada',
@@ -91,7 +89,7 @@ const handleStudyAbroad = async (from, action, state) => {
     );
   }
 
-  // ── Step 4: Timeline → send checklist + push consult ─
+  // ── Step 4: Timeline → AI picks up with collected context ─
   if (TIMELINES[action]) {
     const timeline    = TIMELINES[action];
     const destination = state.data?.destination || 'your destination';
@@ -99,28 +97,16 @@ const handleStudyAbroad = async (from, action, state) => {
 
     await updateData(from, { timeline });
     await updateLead(from, { timeline, conversation_stage: 'qualified' });
+    await setState(from, STAGES.FREE_TEXT_AI);
 
-    await sendText(
+    const { askAI } = require('../services/ai');
+    const aiReply   = await askAI(
       from,
-      `✅ *Excellent! Here is your profile:*\n\n` +
-      `📌 Destination: *${destination}*\n` +
-      `📌 Level: *${level}*\n` +
-      `📌 Timeline: *${timeline}*\n\n` +
-      `Our counselors will:\n` +
-      `1️⃣ Identify the best universities for your profile\n` +
-      `2️⃣ Guide your application end-to-end\n` +
-      `3️⃣ Prepare all your documents\n` +
-      `4️⃣ Process your student visa\n\n` +
-      statsBlock()
+      `${level} in ${destination}, starting ${timeline}.`,
+      { stage: STAGES.FREE_TEXT_AI, data: { ...state.data, timeline, destination, program_level: level, service: 'study_abroad' } },
+      `The user just selected their study profile via the menu: ${level} in ${destination}, timeline ${timeline}. You already have this — do NOT ask for any of it again. Now pick ONE sharp, specific angle that would genuinely surprise or excite a Nigerian student in this situation: a visa advantage, a post-study work right, a cost insight, a scholarship angle, or a common fear you can address. Then end with a soft move toward the ₦10,000 registration. Under 4 sentences. No bullet points. Sound exactly like Ade — warm, specific, direct.`
     );
-
-    // Send document checklist
-    const countryKey = destination.split(' ')[0]; // "United Kingdom" → "United"
-    const checklistCountry = destination === 'United Kingdom' ? 'UK' : countryKey;
-    await sendText(from, documentChecklist(checklistCountry));
-
-    // Push to consultation
-    return startConsultation(from, state);
+    return sendText(from, aiReply);
   }
 };
 

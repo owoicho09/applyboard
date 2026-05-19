@@ -10,7 +10,6 @@ const { handlePoF }         = require('../flows/proofOfFunds');
 const { startConsultation } = require('../flows/consultation');
 const { handlePayment }     = require('../flows/payment');
 const { escalate }          = require('../flows/escalation');
-const { sendText }          = require('../services/whatsapp');
 const { BTN, STAGES }       = require('../config/constants');
 
 // ── Master route map — every button ID mapped to its handler

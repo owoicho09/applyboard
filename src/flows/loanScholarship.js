@@ -3,7 +3,6 @@ const { setState, updateData }  = require('../utils/stateManager');
 const { updateLead }            = require('../services/leadService');
 const { STAGES, BTN }           = require('../config/constants');
 const { formatLoanMessage }     = require('../data/loanPackages');
-const { startConsultation }     = require('./consultation');
 
 const handleLoan = async (from, action, state) => {
 
@@ -31,47 +30,56 @@ const handleLoan = async (from, action, state) => {
 
   // ── Step 2: Europe loan ───────────────────────────────
   if (action === BTN.LOAN_EUR) {
-    await updateData(from, { loan_region: 'Europe/UK' });
+    await updateData(from, { loan_region: 'Europe/UK', service: 'loan' });
+    await updateLead(from, { loan_interest: true });
+    await setState(from, STAGES.FREE_TEXT_AI);
+
     const msg = formatLoanMessage('EUROPE');
     await sendText(from, msg);
 
-    await sendButtons(
+    const { askAI } = require('../services/ai');
+    const aiReply   = await askAI(
       from,
-      `Ready to check your eligibility? It starts with a simple credit check.`,
-      [
-        { id: BTN.SVC_CONSULT, title: '✅ Check Eligibility' },
-        { id: BTN.MENU_MAIN,   title: '🏠 Main Menu' },
-      ]
+      'Europe/UK Masters loan.',
+      { stage: STAGES.FREE_TEXT_AI, data: { ...state.data, loan_region: 'Europe/UK', service: 'loan' } },
+      `The user is interested in a Masters loan for Europe or UK. The loan details message was just sent above. Your job now: ask one natural qualifying question — either their age (loan has a 32+ age restriction), which country specifically, or what Masters program they are targeting. Keep it conversational and warm. One question only.`
     );
-    return startConsultation(from, { ...state, data: { ...state.data, service: 'Europe Study Loan' } });
+    return sendText(from, aiReply);
   }
 
   // ── Step 3: Canada loan ───────────────────────────────
   if (action === BTN.LOAN_CA) {
-    await updateData(from, { loan_region: 'Canada' });
+    await updateData(from, { loan_region: 'Canada', service: 'loan' });
+    await updateLead(from, { loan_interest: true });
+    await setState(from, STAGES.FREE_TEXT_AI);
+
     const msg = formatLoanMessage('CANADA');
     await sendText(from, msg);
 
-    return startConsultation(from, { ...state, data: { ...state.data, service: 'Canada Study Loan' } });
+    const { askAI } = require('../services/ai');
+    const aiReply   = await askAI(
+      from,
+      'Canada study loan.',
+      { stage: STAGES.FREE_TEXT_AI, data: { ...state.data, loan_region: 'Canada', service: 'loan' } },
+      `The user is interested in the Canada study loan. The loan details message was just sent above. Ask one natural qualifying question — their age (important for eligibility since 32+ limits options), or what program they are targeting (undergrad or masters). One question, warm and direct.`
+    );
+    return sendText(from, aiReply);
   }
 
   // ── Step 4: Scholarships ──────────────────────────────
   if (action === BTN.LOAN_SCH) {
-    await updateData(from, { loan_region: 'Scholarship' });
+    await updateData(from, { loan_region: 'Scholarship', service: 'loan' });
+    await updateLead(from, { loan_interest: true });
+    await setState(from, STAGES.FREE_TEXT_AI);
 
-    await sendText(
+    const { askAI } = require('../services/ai');
+    const aiReply   = await askAI(
       from,
-      `🎓 *Scholarship Opportunities*\n\n` +
-      `Most of our partner universities offer *10–50% tuition scholarships*.\n\n` +
-      `✅ We identify the best scholarship match for your profile\n` +
-      `✅ We handle your scholarship application alongside your admission\n` +
-      `✅ Merit-based and need-based options available\n\n` +
-      `*Our scholarship partners include schools in:*\n` +
-      `🇨🇦 Canada | 🇬🇧 UK | 🇩🇪 Germany | 🇮🇪 Ireland | 🇦🇺 Australia\n\n` +
-      `⚡ Scholarship deadlines are often 6–12 months before intake. Apply early!`
+      'Scholarships.',
+      { stage: STAGES.FREE_TEXT_AI, data: { ...state.data, loan_region: 'Scholarship', service: 'loan' } },
+      `The user is interested in scholarships. Share one specific, surprising insight about how scholarships actually work for Nigerian students — either the 6–12 month deadline reality, merit vs need-based split, or the fact that partner schools offer 10–50% tuition reductions that most people miss. Then ask one qualifying question about their program or target country to help identify the best match. Under 4 sentences. No bullet points. Sound like Ade.`
     );
-
-    return startConsultation(from, { ...state, data: { ...state.data, service: 'Scholarship' } });
+    return sendText(from, aiReply);
   }
 };
 
