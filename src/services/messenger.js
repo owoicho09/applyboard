@@ -46,7 +46,7 @@ const sendText = async (to, text) => {
   const result = isTelegram(to)
     ? await tg.sendText(getReplyChat(to), text)
     : await wa.sendText(to, text);
-  await logOutbound(to, text);
+  logOutbound(to, text).catch(() => {});
   return result;
 };
 
@@ -54,7 +54,7 @@ const sendButtons = async (to, bodyText, buttons, headerText = null) => {
   const result = isTelegram(to)
     ? await tg.sendButtons(getReplyChat(to), bodyText, buttons, headerText)
     : await wa.sendButtons(to, bodyText, buttons, headerText);
-  await logOutbound(to, `[buttons] ${bodyText}`);
+  logOutbound(to, `[buttons] ${bodyText}`).catch(() => {});
   return result;
 };
 
@@ -62,7 +62,7 @@ const sendList = async (to, bodyText, buttonLabel, sections) => {
   const result = isTelegram(to)
     ? await tg.sendList(getReplyChat(to), bodyText, buttonLabel, sections)
     : await wa.sendList(to, bodyText, buttonLabel, sections);
-  await logOutbound(to, `[list] ${bodyText}`);
+  logOutbound(to, `[list] ${bodyText}`).catch(() => {});
   return result;
 };
 
@@ -70,7 +70,7 @@ const sendDocument = async (to, url, filename, caption = '') => {
   const result = isTelegram(to)
     ? await tg.sendDocument(getReplyChat(to), url, filename, caption)
     : await wa.sendDocument(to, url, filename, caption);
-  await logOutbound(to, `[document] ${filename} — ${caption}`);
+  logOutbound(to, `[document] ${filename} — ${caption}`).catch(() => {});
   return result;
 };
 
@@ -78,7 +78,7 @@ const sendImage = async (to, url, caption = '') => {
   const result = isTelegram(to)
     ? await tg.sendImage(getReplyChat(to), url, caption)
     : await wa.sendImage(to, url, caption);
-  await logOutbound(to, `[image] ${caption}`);
+  logOutbound(to, `[image] ${caption}`).catch(() => {});
   return result;
 };
 

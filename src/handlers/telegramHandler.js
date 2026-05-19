@@ -118,17 +118,20 @@ const handleTelegram = async (update) => {
 
         const phone = tgId(userId);
 
-        const limited = await isRateLimited(phone);
+        const [limited, state] = await Promise.all([
+          isRateLimited(phone),
+          getState(phone),
+          tg.sendTyping(chatId),
+        ]);
+
         if (limited) {
           await tg.sendText(chatId, MESSAGES.rateLimit);
           return;
         }
 
-        await tg.sendTyping(chatId);
-        await upsertLead(phone, { name, source: 'telegram' });
-        await logMessage(phone, 'inbound', 'text', cleanText, String(msg.message_id));
-
-        const state = await getState(phone);
+        upsertLead(phone, { name, source: 'telegram' })
+          .then(() => logMessage(phone, 'inbound', 'text', cleanText, String(msg.message_id)))
+          .catch((err) => console.error('[TELEGRAM] Lead/log error:', err.message));
 
         console.log(`[TELEGRAM] Group mention userId=${userId} chatId=${chatId} stage=${state.stage} text="${cleanText.slice(0, 50)}"`);
 
@@ -143,17 +146,20 @@ const handleTelegram = async (update) => {
       // ── PRIVATE DM ────────────────────────────────────
       const phone = tgId(userId);
 
-      const limited = await isRateLimited(phone);
+      const [limited, state] = await Promise.all([
+        isRateLimited(phone),
+        getState(phone),
+        tg.sendTyping(chatId),
+      ]);
+
       if (limited) {
         await tg.sendText(chatId, MESSAGES.rateLimit);
         return;
       }
 
-      await tg.sendTyping(chatId);
-      await upsertLead(phone, { name, source: 'telegram' });
-      await logMessage(phone, 'inbound', 'text', text, String(msg.message_id));
-
-      const state = await getState(phone);
+      upsertLead(phone, { name, source: 'telegram' })
+        .then(() => logMessage(phone, 'inbound', 'text', text, String(msg.message_id)))
+        .catch((err) => console.error('[TELEGRAM] Lead/log error:', err.message));
 
       console.log(`[TELEGRAM] DM userId=${userId} stage=${state.stage} text="${text.slice(0, 50)}"`);
 

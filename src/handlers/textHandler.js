@@ -172,9 +172,11 @@ const handleText = async (from, text, state, message) => {
   try {
     const { askAI } = require('../services/ai');
 
-    await detectAndSaveSignals(from, lower, state);
-
-    const aiReply = await askAI(from, clean, state);
+    // Signal detection writes to DB/Redis — run it in parallel with the AI call
+    const [, aiReply] = await Promise.all([
+      detectAndSaveSignals(from, lower, state),
+      askAI(from, clean, state),
+    ]);
 
     // Check if AI has flagged payment should be sent now
     const shouldSendPayment = aiReply.includes('[[SEND_PAYMENT_LINK]]');

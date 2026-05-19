@@ -20,27 +20,26 @@ const handleIncoming = async (entry) => {
     return;
   }
 
-  // 2. Mark as read
-  await markRead(msgId);
+  // 2–6. Run independent ops in parallel — markRead and state fetch don't depend on each other
+  const content = message.text?.body
+               || message.interactive?.button_reply?.id
+               || msgType;
 
-  // 3. Rate limit
-  const limited = await isRateLimited(from);
+  const [limited, state] = await Promise.all([
+    isRateLimited(from),
+    getState(from),
+    markRead(msgId), // fire-and-forget receipt — result not needed
+  ]);
+
   if (limited) {
     await sendText(from, MESSAGES.rateLimit);
     return;
   }
 
-  // 4. Upsert lead
-  await upsertLead(from, { name: contact?.profile?.name });
-
-  // 5. Log message
-  const content = message.text?.body
-               || message.interactive?.button_reply?.id
-               || msgType;
-  await logMessage(from, 'inbound', msgType, content, msgId);
-
-  // 6. Get state
-  const state = await getState(from);
+  // Lead upsert and inbound log run in background — don't block the reply
+  upsertLead(from, { name: contact?.profile?.name })
+    .then(() => logMessage(from, 'inbound', msgType, content, msgId))
+    .catch((err) => console.error('[HANDLER] Lead/log error:', err.message));
 
   console.log(`[HANDLER] from=${from} type=${msgType} stage=${state.stage}`);
 
