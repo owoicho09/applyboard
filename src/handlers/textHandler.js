@@ -133,20 +133,32 @@ const handleText = async (from, text, state, message) => {
     }
 
     // AI handles everything else — questions, objections, "yes", "ok", short replies, follow-ups.
-    // The AI decides if the moment is right to offer the link. It can use [[SEND_PAYMENT_LINK]]
-    // when the user explicitly confirms they are ready to pay.
     const { askAI } = require('../services/ai');
     const aiReply   = await askAI(
       from, clean, state,
-      `This user received a ₦10,000 registration payment link but has not paid yet. They may have questions, concerns, or just be warming up. Your job: answer whatever they asked or respond to what they said — fully, naturally, like Ade would. Address their actual message first. Then, only if the moment feels right, ask softly: "Are you ready to go ahead with the registration?" — do NOT ask this every single message. If they clearly confirm they want to pay (e.g., "yes let's do it", "ok send it"), end your response with [[SEND_PAYMENT_LINK]] on its own line. Never skip their question to push the link. Relationship first, transaction second.`
+      `This user received a ₦10,000 registration payment link but has not paid yet. They may have questions or concerns. Your job: answer whatever they asked — fully, naturally, like Ade would. Address their actual message first. Then, only if the moment feels right, ask once: "Are you ready to go ahead with the registration?" — do NOT ask this on every message.
+
+CRITICAL — how to trigger the payment link:
+- If they clearly confirm they want to pay (e.g. "yes", "let's do it", "ok send it", "I'm ready"), you MUST place the exact text [[SEND_PAYMENT_LINK]] on its own line at the very end of your response. This is a machine trigger — it does NOT show to the user. The system generates and sends the link automatically when it sees this tag.
+- Do NOT say "I'll send you the link", "the link is on its way", "link will be sent", or anything describing sending a link. Just include [[SEND_PAYMENT_LINK]] and stay silent about it.
+- Do NOT include [[SEND_PAYMENT_LINK]] unless the user has clearly confirmed they want to pay right now.`
     );
 
-    const shouldSendLink = aiReply.includes('[[SEND_PAYMENT_LINK]]');
+    // Primary detection — AI used the tag correctly
+    const tagPresent = aiReply.includes('[[SEND_PAYMENT_LINK]]');
+
+    // Fallback detection — AI narrated the action instead of using the tag
+    // Catches phrases like "sending you the link", "link is on its way", "here's your payment link"
+    const narrationPattern = /\b(send(ing)? (you )?(the |a )?(payment )?link|link (is |being )?(sent|on its way)|here.{0,10}(payment )?link|your (payment )?link (is )?coming)\b/i;
+    const aiNarratedLink   = !tagPresent && narrationPattern.test(aiReply);
+
+    const shouldSendLink = tagPresent || aiNarratedLink;
     const cleanReply     = aiReply.replace('[[SEND_PAYMENT_LINK]]', '').trim();
 
     if (cleanReply) await sendText(from, cleanReply);
 
     if (shouldSendLink) {
+      console.log(`[PAYMENT TRIGGER] PAYMENT_AWAITING — tag=${tagPresent} narration=${aiNarratedLink}`);
       const { handlePayment } = require('../flows/payment');
       const amount            = getPaymentAmount(state);
       const { updateData }    = require('../utils/stateManager');
