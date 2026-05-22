@@ -13,6 +13,14 @@ const HARD_TRIGGERS = {
 const matchesHard = (text, keywords) =>
   keywords.some((kw) => text.toLowerCase().includes(kw.toLowerCase()));
 
+// Strip markdown formatting symbols from WhatsApp messages.
+// WhatsApp renders these as literal characters — the AI sometimes forgets the rule.
+const stripWhatsAppMarkdown = (text) => text
+  .replace(/\*([^*\n]+)\*/g, '$1')  // *bold*
+  .replace(/_([^_\n]+)_/g, '$1')    // _italic_
+  .replace(/^#{1,6}\s+/gm, '')      // # headers at line start
+  .replace(/^[*\-]\s+/gm, '');      // bullet starters (* or -)
+
 // Map exam keywords to amounts
 const EXAM_AMOUNTS = {
   'ielts':    85000,
@@ -96,8 +104,35 @@ const handleText = async (from, text, state, message) => {
     return escalate(from, state);
   }
 
-  // ── 4. First message ──────────────────────────────────
+  // ── 4. First message / returning user ───────────────
   if (state.stage === STAGES.GREETING || !state.stage) {
+    const { getLead } = require('../services/leadService');
+    const lead        = await getLead(from);
+
+    if (lead?.name || lead?.service_interested || lead?.destination_country) {
+      // Returning user — Redis expired but Supabase has their profile.
+      // Restore key fields and hand straight to AI with context.
+      const restored = {};
+      if (lead.name)                restored.name               = lead.name;
+      if (lead.destination_country) restored.destination        = lead.destination_country;
+      if (lead.service_interested)  restored.service_interested = lead.service_interested;
+      if (lead.program_level)       restored.program_level      = lead.program_level;
+      if (lead.timeline)            restored.timeline           = lead.timeline;
+      if (lead.loan_interest)       restored.loan_interest      = lead.loan_interest;
+      if (lead.notes)               restored.notes              = lead.notes;
+
+      await setState(from, STAGES.FREE_TEXT_AI, restored);
+      const freshState = await getState(from);
+
+      const { askAI } = require('../services/ai');
+      const aiReply   = await askAI(
+        from, clean, freshState,
+        `This user is returning after a gap — their session expired but they are a known contact. Their profile is already loaded in context. Do NOT re-introduce yourself or say "welcome". Pick up naturally — one warm sentence acknowledging you remember them, then one question that continues where you left off. Profile: ${lead.name ? `name: ${lead.name}` : ''}${lead.destination_country ? `, destination: ${lead.destination_country}` : ''}${lead.service_interested ? `, service: ${lead.service_interested}` : ''}.`
+      );
+      return sendText(from, aiReply);
+    }
+
+    // Genuine new user
     const { sendGreeting } = require('../flows/greeting');
     await setState(from, STAGES.FREE_TEXT_AI);
     return sendGreeting(from, state.data?.name);
@@ -209,33 +244,35 @@ When user clearly confirms they want to pay, OR right after answering a trust ob
       askAI(from, clean, state),
     ]);
 
-    // Check if AI has flagged payment should be sent now
-    const shouldSendPayment = aiReply.includes('[[SEND_PAYMENT_LINK]]');
+    const tagPresent = aiReply.includes('[[SEND_PAYMENT_LINK]]');
 
-    // Clean the tag from the message before sending to user
-    const cleanReply = aiReply.replace('[[SEND_PAYMENT_LINK]]', '').trim();
+    // Strip tag and — for WhatsApp — strip any markdown the AI leaked
+    let cleanReply = aiReply.replace('[[SEND_PAYMENT_LINK]]', '').trim();
+    if (!from.startsWith('tg_')) cleanReply = stripWhatsAppMarkdown(cleanReply);
 
-    // Send the AI message first
-    if (cleanReply) {
-      await sendText(from, cleanReply);
-    }
+    if (cleanReply) await sendText(from, cleanReply);
 
-    // Then immediately send the payment link if flagged
-    if (shouldSendPayment) {
-      console.log('[PAYMENT TRIGGER] AI flagged payment — generating link...');
-
-      const { handlePayment } = require('../flows/payment');
-      const amount             = getPaymentAmount(state);
-      const { updateData }     = require('../utils/stateManager');
-
-      // Save amount to state
-      await updateData(from, { payment_amount: amount });
-
-      // Get fresh state with updated amount
+    if (tagPresent) {
       const freshState = await getState(from);
+      const d          = freshState.data || {};
+      const hasContext = !!(d.name || d.destination || d.service_interested || d.destination_country);
 
-      // Fire payment immediately
-      await handlePayment(from, 'REGISTRATION', freshState);
+      if (!hasContext) {
+        // No qualification data yet — block the payment trigger
+        console.log('[GUARDRAIL] Payment tag blocked — no context collected');
+      } else if (d.payment_url) {
+        // Link already generated this session — resend stored URL (FREE_TEXT_AI dedup)
+        console.log('[PAYMENT TRIGGER] FREE_TEXT_AI — resending existing link (dedup)');
+        await sendText(from, `Here is your payment link:\n\n${d.payment_url}\n\nPay with card, bank transfer, or USSD. Confirmation comes through automatically once done.`);
+      } else {
+        console.log('[PAYMENT TRIGGER] AI flagged payment — generating link...');
+        const { handlePayment } = require('../flows/payment');
+        const amount             = getPaymentAmount(state);
+        const { updateData }     = require('../utils/stateManager');
+        await updateData(from, { payment_amount: amount });
+        const payState = await getState(from);
+        await handlePayment(from, 'REGISTRATION', payState);
+      }
     }
 
   } catch (err) {

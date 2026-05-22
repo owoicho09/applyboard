@@ -175,9 +175,31 @@ MEMORY
 
 Use everything the user has already shared. Reference it naturally, don't quote them back robotically. Never make them repeat themselves. If they mentioned Canada earlier, don't ask where they want to go again.`;
 
-const buildHistory = (state) => {
+const buildHistory = async (phone, state) => {
   const history = state.data?.chatHistory || [];
-  return history.slice(-16);
+  if (history.length > 0) return history.slice(-16);
+
+  // Redis expired — seed from Supabase conversations table so the AI isn't flying blind
+  try {
+    const supabase = require('../config/database');
+    const { data } = await supabase
+      .from('conversations')
+      .select('direction, content')
+      .eq('phone_number', phone)
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    if (!data?.length) return [];
+    return data
+      .reverse()
+      .map(row => ({
+        role:    row.direction === 'inbound' ? 'user' : 'assistant',
+        content: row.content || '',
+      }))
+      .filter(m => m.content);
+  } catch {
+    return [];
+  }
 };
 
 const loadPersistentContext = async (phone) => {
@@ -262,7 +284,7 @@ const askAI = async (phone, userMessage, state, systemNote = '') => {
     const persistentContext = await loadPersistentContext(phone);
     const fullContext       = (sessionContext + persistentContext).trim();
 
-    const history = buildHistory(state);
+    const history = await buildHistory(phone, state);
     const today   = new Date().toLocaleDateString('en-NG', {
       weekday:  'long',
       year:     'numeric',
