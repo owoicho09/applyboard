@@ -141,12 +141,13 @@ const handleText = async (from, text, state, message) => {
 WHAT THE ₦10,000 REGISTRATION COVERS — know this cold so you can answer confidently:
 Immediate matching with the right specialist for their exact profile. A personal case review and tailored roadmap. Access to partner schools, institutions, and application support. No hidden charges. No service commission added on top. The ₦10,000 is the only fee from us to get started. Any third-party costs (school application fees, visa fees, exam fees) are disclosed upfront by the specialist — never a surprise from our side.
 
-TRUST OBJECTION DETECTION — highest priority:
-If their message is asking about fees, charges, hidden costs, or what they get — phrases like "what do I get", "what is the 10k for", "what am I getting from this", "hidden charges", "additional cost", "any other fees", "service charge", "is that all I pay", "what's your commission", "will I pay more", "is there not going to be additional cost" — these are TRUST OBJECTIONS. The final friction before conversion. Handle them like this:
-1. Answer the specific objection clearly in 1-2 confident sentences — no hedging, no "it depends"
-2. Close immediately with one confident sentence: "You are all set — once you register your specialist reaches out same day."
-3. Place [[SEND_PAYMENT_LINK]] at the very end — resend the link without asking if they are ready
-After answering a trust objection do NOT ask "are you comfortable?" or "do you still have questions?" — that reopens doubt. Answer, close, send the link.
+TRUST OBJECTION DETECTION — payment friction only:
+A trust objection is ONLY a question about the payment itself. Qualifying phrases: "what do I get", "what is the 10k for", "what am I getting from this", "hidden charges", "additional charges", "any other fees", "service charge", "is that all I pay", "what's your commission", "will I pay more after this", "is there not going to be additional cost". These are about the money specifically.
+When you detect one of these:
+1. Answer clearly in 1-2 confident sentences — no hedging
+2. Close with one sentence: "You are all set — register now and your specialist reaches out same day."
+3. Include [[SEND_PAYMENT_LINK]] at the very end. Do NOT ask "are you ready?" after a trust objection — answer, close, done.
+Questions about the office address, company history, what services you offer, or how the process works are NOT trust objections — answer them normally, no [[SEND_PAYMENT_LINK]] unless they then confirm they want to pay.
 
 For everything else (genuine questions, hesitation, objections about value):
 Answer fully, naturally, as Ade would. Address their message first. Ask a follow-up question only if it moves things forward — not on every single message.
@@ -169,13 +170,20 @@ When user clearly confirms they want to pay, OR right after answering a trust ob
     if (cleanReply) await sendText(from, cleanReply);
 
     if (shouldSendLink) {
-      console.log(`[PAYMENT TRIGGER] PAYMENT_AWAITING — tag=${tagPresent} narration=${aiNarratedLink}`);
-      const { handlePayment } = require('../flows/payment');
-      const amount            = getPaymentAmount(state);
-      const { updateData }    = require('../utils/stateManager');
-      await updateData(from, { payment_amount: amount });
-      const freshState = await getState(from);
-      await handlePayment(from, 'REGISTRATION', freshState);
+      const existingUrl = state.data?.payment_url;
+      if (existingUrl) {
+        // Link already generated this session — resend the stored URL, never charge again
+        console.log('[PAYMENT TRIGGER] PAYMENT_AWAITING — resending existing link (dedup)');
+        await sendText(from, `Here is your payment link:\n\n${existingUrl}\n\nPay with card, bank transfer, or USSD. Confirmation comes through automatically once done.`);
+      } else {
+        console.log(`[PAYMENT TRIGGER] PAYMENT_AWAITING — generating new link tag=${tagPresent} narration=${aiNarratedLink}`);
+        const { handlePayment } = require('../flows/payment');
+        const amount            = getPaymentAmount(state);
+        const { updateData }    = require('../utils/stateManager');
+        await updateData(from, { payment_amount: amount });
+        const freshState = await getState(from);
+        await handlePayment(from, 'REGISTRATION', freshState);
+      }
     }
 
     return;

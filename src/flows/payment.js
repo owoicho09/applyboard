@@ -23,7 +23,7 @@ const handlePayment = async (from, action, state) => {
         name:         state.data?.name || '',
       });
 
-      await setState(from, STAGES.PAYMENT_AWAITING, { payment_ref: reference });
+      await setState(from, STAGES.PAYMENT_AWAITING, { payment_ref: reference, payment_url: url });
 
       // Save pending payment record
       try {

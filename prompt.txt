@@ -1,0 +1,36 @@
+I need you to investigate and fix a set of production bugs in this WhatsApp bot codebase. Do not jump to solutions immediately — first read the architecture thoroughly, understand how data flows, then devise your own fixes.
+
+---
+
+CONTEXT:
+
+This is a Node.js WhatsApp bot for ApplyBoard Africa — an immigration and study-abroad consultancy. It uses Meta WhatsApp Cloud API, Redis for conversation state, Supabase for lead data, Paystack for payments, and Claude AI for free-text conversation handling.
+
+The bot is in production with real users actively using it daily. These bugs are killing conversions.
+
+---
+
+OBSERVED PROBLEMS IN PRODUCTION:
+
+PROBLEM 1 — PAYMENT LINK SENT MULTIPLE TIMES IN ONE CONVERSATION
+In a real conversation today, a user said "yes am ready" to pay once. The bot sent the payment link 6 separate times across the conversation — every time the user sent another message asking about the office address or loans, a new payment link was generated and sent. The user received 6 different Paystack checkout URLs in one session. This is the most urgent problem.
+
+PROBLEM 2 — COMPANY ADDRESS NOT BEING GIVEN ACCURATELY
+When a user asks "what is your office address" or "where are you located", the bot responds with vague answers like "we're based in Lagos, Nigeria" instead of the actual street address. The full address exists in the codebase in constants.js inside a COMPANY object. The bot is not using it — it appears to be guessing from general knowledge instead.
+
+PROBLEM 3 — PROMPT DRIFT UNDER PRODUCTION LOAD
+The system has been patched multiple times via AI prompt adjustments to fix conversation behavior. Each patch fixes one thing but breaks or weakens something else. The AI is currently acting as both the conversationalist and the control plane — it decides when to push for payment, what company info to give, and how to handle trust objections. There are no code-level guardrails catching bad AI decisions. This is not sustainable as conversation volume grows.
+
+---
+
+YOUR TASK:
+
+1. Read the full codebase — specifically how messages flow from webhook to response, how Redis state is managed, how the AI is called, how payment links are generated and triggered, and how COMPANY constants are used (or not used) across the system.
+
+2. Identify the exact root cause of each problem above from the code itself — not from assumptions.
+
+3. Devise and implement fixes that solve these problems at the right layer. Some of these may be prompt issues, some may be state management issues, some may be architectural gaps. You decide after reading the code.
+
+4. Do not over-engineer. Do not rewrite what is working. Fix what is broken at the lowest intervention point that makes the fix durable.
+
+After reading, tell me what you found before you change anything.

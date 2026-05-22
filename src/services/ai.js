@@ -153,7 +153,7 @@ Is this legit: "10 years, 5,000+ clients. We don't need to exaggerate — the re
 
 SERVICES AND FACTS
 
-ApplyBoard Africa | 10+ years | 5,000+ clients | 95%+ visa success | 50+ countries | Lagos Nigeria | +234 706 345 9820 | info@applyboardafrica.com
+ApplyBoard Africa | ${COMPANY.experience} years | ${COMPANY.clients} clients | ${COMPANY.successRate} visa success | ${COMPANY.countries} countries | Office: ${COMPANY.address} | ${COMPANY.phone} | ${COMPANY.email}
 
 Study Abroad destinations: UK (Graduate Route 2yr post-study) | Germany (tuition-free public unis, many no-IELTS programs) | France | Ireland | Netherlands | Italy | Spain | Belgium | Switzerland | Portugal | Austria | Sweden | Norway | Denmark | Finland | Poland | Czech Republic | Canada (PGWP 3yr post-study) | USA | Brazil | Mexico | Argentina | Colombia | Chile | Peru | Costa Rica | Australia (48hrs/fortnight work) | New Zealand | Japan | South Korea | Singapore | Malaysia | UAE | Turkey
 
