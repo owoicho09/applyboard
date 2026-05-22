@@ -204,7 +204,39 @@ const loadPersistentContext = async (phone) => {
   }
 };
 
+const GPT_SYSTEM_PROMPT = `You are Ade — a Nigerian relocation strategist at ApplyBoard Africa. A trusted friend, not a bot. You have helped thousands of Nigerians get abroad legally and successfully.
+
+Text like a real human. Short messages — 2 to 3 sentences max. No bullet points, no numbered lists, no bold, no hyphens as list markers. One question at a time. Warm, direct, never corporate.
+
+When the user clearly confirms they want to pay the ₦10,000 registration fee, place [[SEND_PAYMENT_LINK]] on its own line at the very end of your response. This is a machine trigger — it does NOT appear to the user. Do NOT say "I'll send you the link" or anything about sending a link. Only use when they've genuinely confirmed.
+
+ApplyBoard Africa | 10+ years | 5,000+ clients | 95%+ visa success | Lagos Nigeria | +234 706 345 9820
+Services: Study abroad (UK, Canada, Germany, USA, Australia, Ireland, France, 50+ countries) | Visa processing (95%+ success) | Loans (Masters Europe/Canada, Undergrad Canada) | Test prep (IELTS ₦85k, TOEFL ₦75k, PTE ₦70k, GRE ₦90k, GMAT ₦95k, Duolingo ₦45k) | Travel and Pilgrimage.
+Registration ₦10,000 applies to Study Abroad, Visa, Loans, Travel, Pilgrimage — NOT test prep.`;
+
+const askGPT = async (messages, systemNote = '') => {
+  const axios  = require('axios');
+  const system = systemNote ? `${GPT_SYSTEM_PROMPT}\n\n${systemNote}` : GPT_SYSTEM_PROMPT;
+  const res    = await axios.post(
+    'https://api.openai.com/v1/chat/completions',
+    {
+      model:      'gpt-4o-mini',
+      max_tokens: 500,
+      messages:   [{ role: 'system', content: system }, ...messages],
+    },
+    {
+      headers: {
+        Authorization:  `Bearer ${process.env.OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      timeout: 15000,
+    }
+  );
+  return res.data.choices[0]?.message?.content || '';
+};
+
 const askAI = async (phone, userMessage, state, systemNote = '') => {
+  let messages;
   try {
     const userData     = state.data || {};
     const contextParts = [];
@@ -248,7 +280,7 @@ const askAI = async (phone, userMessage, state, systemNote = '') => {
       ? `${userMessage}\n\n${fullContext}\nToday's date: ${today}\n${platformNote}`
       : `${userMessage}\nToday's date: ${today}\n${platformNote}`;
 
-    const messages = [
+    messages = [
       ...history,
       {
         role:    'user',
@@ -298,6 +330,17 @@ const askAI = async (phone, userMessage, state, systemNote = '') => {
     console.error('[AI] Error:', err.message);
     if (err.message?.includes('credit balance')) {
       console.error('[AI] BILLING: Top up at console.anthropic.com');
+    }
+    if (process.env.OPENAI_API_KEY && messages) {
+      try {
+        console.log('[AI] Claude failed — falling back to GPT');
+        const rawReply        = await askGPT(messages, systemNote);
+        const replyForHistory = rawReply.replace(/\[\[SEND_PAYMENT_LINK\]\]/g, '').trim();
+        await saveToHistory(phone, state, userMessage, replyForHistory);
+        return rawReply;
+      } catch (gptErr) {
+        console.error('[AI] GPT fallback also failed:', gptErr.message);
+      }
     }
     return `Something went wrong on my end. Give me a moment and try again, or reach us directly on ${COMPANY.phone}`;
   }
