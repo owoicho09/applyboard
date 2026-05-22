@@ -256,7 +256,7 @@ const askAI = async (phone, userMessage, state, systemNote = '') => {
       },
     ];
 
-    const response = await client.messages.create({
+    const apiCall = () => client.messages.create({
       model:      MODEL,
       max_tokens: 500, // raised from 400 — prevents mid-sentence truncation on complex answers
       system: [{
@@ -266,6 +266,22 @@ const askAI = async (phone, userMessage, state, systemNote = '') => {
       }],
       messages,
     });
+
+    let response;
+    for (let attempt = 0; attempt <= 2; attempt++) {
+      try {
+        response = await apiCall();
+        break;
+      } catch (retryErr) {
+        const isOverloaded = retryErr.status === 529 || retryErr.message?.includes('overloaded');
+        if (isOverloaded && attempt < 2) {
+          console.log('[AI] Overloaded — retrying...');
+          await new Promise((res) => setTimeout(res, 2000));
+        } else {
+          throw retryErr;
+        }
+      }
+    }
 
     const rawReply = response.content[0]?.text || '';
 
