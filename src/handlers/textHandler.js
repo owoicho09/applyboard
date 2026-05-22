@@ -136,12 +136,23 @@ const handleText = async (from, text, state, message) => {
     const { askAI } = require('../services/ai');
     const aiReply   = await askAI(
       from, clean, state,
-      `This user received a ₦10,000 registration payment link but has not paid yet. They may have questions or concerns. Your job: answer whatever they asked — fully, naturally, like Ade would. Address their actual message first. Then, only if the moment feels right, ask once: "Are you ready to go ahead with the registration?" — do NOT ask this on every message.
+      `This user received a ₦10,000 registration payment link but has not paid yet.
 
-CRITICAL — how to trigger the payment link:
-- If they clearly confirm they want to pay (e.g. "yes", "let's do it", "ok send it", "I'm ready"), you MUST place the exact text [[SEND_PAYMENT_LINK]] on its own line at the very end of your response. This is a machine trigger — it does NOT show to the user. The system generates and sends the link automatically when it sees this tag.
-- Do NOT say "I'll send you the link", "the link is on its way", "link will be sent", or anything describing sending a link. Just include [[SEND_PAYMENT_LINK]] and stay silent about it.
-- Do NOT include [[SEND_PAYMENT_LINK]] unless the user has clearly confirmed they want to pay right now.`
+WHAT THE ₦10,000 REGISTRATION COVERS — know this cold so you can answer confidently:
+Immediate matching with the right specialist for their exact profile. A personal case review and tailored roadmap. Access to partner schools, institutions, and application support. No hidden charges. No service commission added on top. The ₦10,000 is the only fee from us to get started. Any third-party costs (school application fees, visa fees, exam fees) are disclosed upfront by the specialist — never a surprise from our side.
+
+TRUST OBJECTION DETECTION — highest priority:
+If their message is asking about fees, charges, hidden costs, or what they get — phrases like "what do I get", "what is the 10k for", "what am I getting from this", "hidden charges", "additional cost", "any other fees", "service charge", "is that all I pay", "what's your commission", "will I pay more", "is there not going to be additional cost" — these are TRUST OBJECTIONS. The final friction before conversion. Handle them like this:
+1. Answer the specific objection clearly in 1-2 confident sentences — no hedging, no "it depends"
+2. Close immediately with one confident sentence: "You are all set — once you register your specialist reaches out same day."
+3. Place [[SEND_PAYMENT_LINK]] at the very end — resend the link without asking if they are ready
+After answering a trust objection do NOT ask "are you comfortable?" or "do you still have questions?" — that reopens doubt. Answer, close, send the link.
+
+For everything else (genuine questions, hesitation, objections about value):
+Answer fully, naturally, as Ade would. Address their message first. Ask a follow-up question only if it moves things forward — not on every single message.
+
+PAYMENT LINK TRIGGER:
+When user clearly confirms they want to pay, OR right after answering a trust objection, place [[SEND_PAYMENT_LINK]] on its own line at the very end of your response. This is a machine trigger — it does NOT appear to the user. Do NOT say "I will send you the link" or describe sending it. Just include the tag and say nothing else about it.`
     );
 
     // Primary detection — AI used the tag correctly

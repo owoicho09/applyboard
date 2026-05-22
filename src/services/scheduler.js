@@ -348,40 +348,59 @@ const sendPrePaymentFollowUps = async () => {
 };
 
 // ── Generate a personalised follow-up for one lead ───────
-const generateFollowUp = async (lead) => {
+const generateFollowUp = async (lead, messages = []) => {
   const name        = lead.name?.split(' ')[0] || 'friend';
   const service     = lead.service_interested  || '';
   const destination = lead.destination_country || '';
   const program     = lead.program_level       || '';
   const exam        = lead.test_prep_exam      || '';
+  const followupNum = (lead.followup_count || 0) + 1;
 
-  const ctx = [
-    service     && `Service they asked about: ${service}`,
+  const profileCtx = [
+    service     && `Service: ${service}`,
     destination && `Destination: ${destination}`,
     program     && `Program level: ${program}`,
     exam        && `Exam: ${exam}`,
-    lead.notes  && `Notes from conversation: ${lead.notes}`,
+    lead.notes  && `Notes: ${lead.notes}`,
   ].filter(Boolean).join('\n');
+
+  // Actual conversation — ground truth; if it conflicts with profile data, trust the conversation
+  const convoSnippet = messages
+    .filter(m => m.content && !m.content.startsWith('['))
+    .map(m => `${m.direction === 'inbound' ? 'Them' : 'Ade'}: ${m.content.slice(0, 200)}`)
+    .join('\n');
+
+  // Each follow-up shorter and more pointed than the last
+  const maxTokens  = followupNum === 1 ? 170 : followupNum === 2 ? 120 : 80;
+  const lengthNote = followupNum === 1
+    ? '2-3 sentences. Warm and specific.'
+    : followupNum === 2
+    ? '1-2 sentences. Short and direct, one question.'
+    : '1 sentence only. Very brief.';
 
   const response = await client.messages.create({
     model:      MODEL,
-    max_tokens: 180,
+    max_tokens: maxTokens,
     messages: [{
       role:    'user',
-      content: `You are Ade — a warm, sharp Nigerian consultant at ApplyBoard Africa. You are checking in with ${name}, a potential client who showed real interest in studying or relocating abroad but never completed their registration.
+      content: `You are Ade — a warm Nigerian consultant at ApplyBoard Africa. This is follow-up ${followupNum} of 3 to ${name}, who showed real interest in studying or relocating abroad but has not yet paid the ₦10,000 registration fee.
 
-What you know about them:
-${ctx || 'They were interested in our services but did not specify further.'}
+${convoSnippet
+  ? `ACTUAL CONVERSATION — this is the ground truth. If it conflicts with profile data, trust the conversation:\n${convoSnippet}`
+  : profileCtx
+  ? `Profile data:\n${profileCtx}`
+  : 'Limited information available.'
+}
+${convoSnippet && profileCtx ? `\nProfile data (use only if the conversation above lacks specifics):\n${profileCtx}` : ''}
 
-Write a short follow-up message that:
-- Sounds exactly like a genuine friend checking in, NOT a reminder bot or sales script
-- References their specific situation naturally (service, destination, or exam if known)
-- If the notes suggest a concern or question they raised, address it warmly in 1 sentence
-- 2–3 sentences total, conversational tone, one emoji maximum
-- Ends with a soft, warm question or invitation — not "click the link below" or "pay now"
-- Makes them feel seen and remembered, not chased
-- Does NOT include any URLs, payment links, or button instructions
-- Write the message text only — no subject line, no formatting labels`,
+Write follow-up ${followupNum}. Rules:
+- Reference something SPECIFIC from the conversation above. Not "your study plans" — use the exact detail: "your MBA in Canada", "your France January intake", "your UK work visa", "the IELTS question you had". If the conversation says UK, say UK. Do not assume from profile data if the conversation is clear.
+- Sound like a real person who genuinely remembered them today — not a scheduled message
+- Do NOT mention payment, registration, fees, or "next steps"
+- End with ONE open question that naturally pulls them back into the conversation
+- ${lengthNote}
+- One emoji maximum. No URLs, no links, no marketing language.
+- Write only the message text`,
     }],
   });
 
@@ -389,35 +408,61 @@ Write a short follow-up message that:
 };
 
 // ── Send follow-ups to leads with pending payment ─────────
+// Requires `followup_count` INTEGER DEFAULT 0 column on the leads table.
+// Cadence: follow-up 1 after day 1, follow-up 2 after day 3, follow-up 3 after day 7. Max 3 total.
 const sendFollowUps = async () => {
   try {
-    // Target leads whose last interaction was between 4 and 36 hours ago
-    const cutoffRecent = new Date(Date.now() - 4  * 60 * 60 * 1000).toISOString();
-    const cutoffOld    = new Date(Date.now() - 36 * 60 * 60 * 1000).toISOString();
+    // Fetch all pending leads whose last interaction was at least 22h ago
+    // Per-lead timing gates in JS enforce the actual day-1 / day-3 / day-7 spacing
+    const cutoff22h = new Date(Date.now() - 22 * 60 * 60 * 1000).toISOString();
 
-    const { data: leads, error } = await supabase
+    const { data: rawLeads, error } = await supabase
       .from('leads')
-      .select('phone_number, name, service_interested, destination_country, program_level, notes, test_prep_exam')
+      .select('phone_number, name, service_interested, destination_country, program_level, notes, test_prep_exam, followup_count, last_interaction')
       .eq('payment_status', 'pending')
-      .lte('last_interaction', cutoffRecent)
-      .gte('last_interaction', cutoffOld)
+      .lte('last_interaction', cutoff22h)
       .limit(30);
 
-    if (error || !leads?.length) return;
+    if (error || !rawLeads?.length) return;
 
+    const now   = Date.now();
+    const leads = rawLeads.filter(lead => {
+      const count        = lead.followup_count || 0;
+      if (count >= 3) return false;
+      const hoursElapsed = (now - new Date(lead.last_interaction).getTime()) / 3600000;
+      if (count === 0) return hoursElapsed >= 22;   // day 1 — first check-in after 22h
+      if (count === 1) return hoursElapsed >= 48;   // day 3 — 2 days after follow-up 1
+      if (count === 2) return hoursElapsed >= 96;   // day 7 — 4 days after follow-up 2
+      return false;
+    });
+
+    if (!leads.length) return;
     console.log(`[SCHEDULER] Follow-up: reaching out to ${leads.length} leads`);
 
     for (const lead of leads) {
       try {
-        const message = await generateFollowUp(lead);
+        // Pull last 4 messages from actual conversation — AI reads this, not just profile fields
+        const { data: recentMsgs } = await supabase
+          .from('conversations')
+          .select('direction, content')
+          .eq('phone_number', lead.phone_number)
+          .order('created_at', { ascending: false })
+          .limit(4);
+
+        const orderedMessages = (recentMsgs || []).reverse();
+
+        const message = await generateFollowUp(lead, orderedMessages);
         if (!message) continue;
 
         await sendText(lead.phone_number, message);
 
-        // Stamp last_interaction so this lead is skipped on the next run (4h grace)
+        // Increment count + stamp — creates the correct gap before the next follow-up
         await supabase
           .from('leads')
-          .update({ last_interaction: new Date().toISOString() })
+          .update({
+            last_interaction: new Date().toISOString(),
+            followup_count:   (lead.followup_count || 0) + 1,
+          })
           .eq('phone_number', lead.phone_number);
 
         await delay(1500);
@@ -435,8 +480,8 @@ const sendFollowUps = async () => {
 // ── Start all scheduled jobs ──────────────────────────────
 const startScheduler = () => {
   // Sequence 1 — pending payment follow-ups (got a link, haven't paid)
-  // Runs 4x daily — more frequent since these leads showed explicit payment intent
-  const pendingTimes = ['0 9 * * *', '0 15 * * *', '0 18 * * *', '0 21 * * *'];
+  // Runs 2x daily — JS gates in sendFollowUps enforce the actual day-1/3/7 per-lead spacing
+  const pendingTimes = ['0 10 * * *', '0 18 * * *'];
   for (const schedule of pendingTimes) {
     cron.schedule(schedule, () => {
       console.log('[SCHEDULER] Firing pending follow-ups...');
@@ -455,7 +500,7 @@ const startScheduler = () => {
   }
 
   console.log('[SCHEDULER] All jobs scheduled:');
-  console.log('[SCHEDULER]   Pending follow-ups       → 9am, 3pm, 6pm, 9pm WAT');
+  console.log('[SCHEDULER]   Pending follow-ups       → 10am, 6pm WAT (day-1/3/7 cadence per lead)');
   console.log('[SCHEDULER]   Pre-payment re-engagement → 10am, 7pm WAT');
 
   if (!GROUP_ID) {
