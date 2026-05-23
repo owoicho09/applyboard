@@ -8,6 +8,14 @@ const HARD_TRIGGERS = {
   menu:  ['menu', 'main menu', 'home', 'restart', 'start over'],
   paid:  ['i have paid', 'i paid', 'payment done', 'transfer done', 'i sent the money', 'i made payment'],
   agent: ['speak to agent', 'talk to human', 'real person', 'speak to someone', 'call me', 'i want to call'],
+  // Catches any request for bank account details — response is hardcoded, never touches the AI
+  bank:  [
+    'account number', 'bank account', 'account details',
+    'gtbank', 'another account', 'different account',
+    "don't do online", 'no online', 'cant do online', "can't do online",
+    'transfer directly', 'send to account', 'direct transfer',
+    'send me account', 'give me account', 'account number please',
+  ],
 };
 
 const matchesHard = (text, keywords) =>
@@ -102,6 +110,13 @@ const handleText = async (from, text, state, message) => {
   if (matchesHard(lower, HARD_TRIGGERS.agent)) {
     const { escalate } = require('../flows/escalation');
     return escalate(from, state);
+  }
+
+  if (matchesHard(lower, HARD_TRIGGERS.bank)) {
+    // Never touch the AI for bank account requests — return a fixed response only.
+    // The AI hallucinated a GTBank account number in production; this intercept prevents recurrence.
+    const url = state.data?.payment_url;
+    return sendText(from, MESSAGES.paystackTransfer(url));
   }
 
   // ── 4. First message / returning user ───────────────

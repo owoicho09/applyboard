@@ -129,6 +129,10 @@ const MESSAGES = {
   bankTransfer: () =>
     `Bank details:\n\nBank: ${BANK.bankName}\nAccount Name: ${BANK.accountName}\nAccount Number: ${BANK.accountNo}\n\nAfter sending, type "I have paid" with your receipt and we confirm within the hour.\n\nUse your phone number as the payment description.`,
 
+  paystackTransfer: (url) => url
+    ? `We only process payments through Paystack — it accepts card, bank transfer, and USSD all in one place, no card required.\n\nHere is your secure link:\n\n${url}\n\nSelect "Bank Transfer" on the Paystack page and it will give you the transfer details. Confirmation comes through automatically once done.`
+    : `We only process payments through Paystack — it accepts card, bank transfer, and USSD all in one place, no card required.\n\nOnce you have your payment link, select "Bank Transfer" on the Paystack page and it handles everything from there. Let me know if you need the link sent again.`,
+
   paymentConfirmed: (amount, ref) =>
     `Payment confirmed.\n\nAmount: ₦${Number(amount).toLocaleString('en-NG')}\nReference: ${ref}\n\nYou are in the system. Someone from our team will be in touch shortly.`,
 
