@@ -69,14 +69,17 @@ const logMessage = async (phone, direction, type, content, waId = null) => {
       .eq('phone_number', phone)
       .single();
 
-    await supabase.from('conversations').insert({
+    const { error } = await supabase.from('conversations').insert({
       lead_id:       lead?.id || null,
       phone_number:  phone,
       direction,
       message_type:  type,
       content:       content?.slice(0, 4096) || '',
+      sent_by:       direction === 'inbound' ? null : 'bot',
       wa_message_id: waId,
+      created_at:    new Date().toISOString(),
     });
+    if (error) console.error('[LEAD SERVICE] logMessage insert error:', error.message, '| phone:', phone);
   } catch (err) {
     console.error('[LEAD SERVICE] logMessage error:', err.message);
   }

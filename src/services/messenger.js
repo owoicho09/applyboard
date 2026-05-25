@@ -32,7 +32,7 @@ const logOutbound = async (to, message, sentBy = 'bot') => {
       .eq('phone_number', to)
       .single();
 
-    await supabase.from('conversations').insert({
+    const { error } = await supabase.from('conversations').insert({
       lead_id:      lead?.id || null,
       phone_number: to,
       direction:    'outbound',
@@ -41,6 +41,7 @@ const logOutbound = async (to, message, sentBy = 'bot') => {
       sent_by:      sentBy,
       created_at:   new Date().toISOString(),
     });
+    if (error) console.error('[MESSENGER] Outbound log insert error:', error.message, '| phone:', to);
   } catch (err) {
     console.error('[MESSENGER] Outbound log error:', err.message);
   }

@@ -206,9 +206,20 @@ router.get('/api/leads/:id', async (req, res) => {
       .from('leads').select('*').eq('id', req.params.id).single();
     if (error) throw error;
 
-    const { data: conversations } = await supabase
-      .from('conversations').select('*').eq('phone_number', lead.phone_number)
-      .order('created_at', { ascending: true }).limit(100);
+    // Query by both phone_number and lead_id — old rows may only have one, merge & deduplicate
+    const [convByPhone, convByLeadId] = await Promise.all([
+      supabase.from('conversations').select('*').eq('phone_number', lead.phone_number)
+        .order('created_at', { ascending: true }).limit(100),
+      supabase.from('conversations').select('*').eq('lead_id', req.params.id)
+        .order('created_at', { ascending: true }).limit(100),
+    ]);
+    const seenIds = new Set();
+    const allConvs = [];
+    for (const row of [...(convByPhone.data || []), ...(convByLeadId.data || [])]) {
+      if (!seenIds.has(row.id)) { seenIds.add(row.id); allConvs.push(row); }
+    }
+    allConvs.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    const conversations = allConvs.slice(0, 100);
 
     const { data: payments } = await supabase
       .from('payments').select('*').eq('lead_id', req.params.id)
@@ -516,18 +527,25 @@ router.get('/api/leads/:id/conversations', async (req, res) => {
       .from('leads').select('phone_number').eq('id', req.params.id).single();
     if (!lead) return res.status(404).json({ error: 'Lead not found' });
 
-    let query = supabase
-      .from('conversations')
-      .select('*')
-      .eq('phone_number', lead.phone_number)
-      .order('created_at', { ascending: true })
-      .limit(100);
+    const buildQ = (col, val) => {
+      let q = supabase.from('conversations').select('*').eq(col, val)
+        .order('created_at', { ascending: true }).limit(100);
+      if (since) q = q.gt('created_at', since);
+      return q;
+    };
 
-    if (since) query = query.gt('created_at', since);
+    const [byPhone, byLeadId] = await Promise.all([
+      buildQ('phone_number', lead.phone_number),
+      buildQ('lead_id',      req.params.id),
+    ]);
 
-    const { data, error } = await query;
-    if (error) throw error;
-    res.json(data || []);
+    const seenIds = new Set();
+    const msgs = [];
+    for (const row of [...(byPhone.data || []), ...(byLeadId.data || [])]) {
+      if (!seenIds.has(row.id)) { seenIds.add(row.id); msgs.push(row); }
+    }
+    msgs.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+    res.json(msgs.slice(0, 100));
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
