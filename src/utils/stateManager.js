@@ -78,4 +78,23 @@ const isMessageSeen = async (messageId) => {
   }
 };
 
-module.exports = { getState, setState, updateData, clearState, isMessageSeen };
+/**
+ * Acquire a per-user processing lock. Returns true if acquired, false if already locked.
+ * Prevents concurrent messages from the same user triggering duplicate AI calls.
+ */
+const tryLock = async (phone, ttlSeconds = 30) => {
+  try {
+    const result = await redis.set(`lock:${phone}`, '1', 'EX', ttlSeconds, 'NX');
+    return result === 'OK';
+  } catch {
+    return true; // fail open — Redis down should not block message processing
+  }
+};
+
+const releaseLock = async (phone) => {
+  try {
+    await redis.del(`lock:${phone}`);
+  } catch {}
+};
+
+module.exports = { getState, setState, updateData, clearState, isMessageSeen, tryLock, releaseLock };

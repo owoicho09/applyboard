@@ -80,7 +80,7 @@ const handleTestPrep = async (from, action, state) => {
       `💰 Fee: ${batch.fee}\n` +
       `✅ Includes: ${batch.includes}\n\n` +
       `*Available Batches:*\n${scheduleText}\n\n` +
-      `Reply with the batch number to register.`
+      `Which batch works for you?`
     );
 
     return sendButtons(

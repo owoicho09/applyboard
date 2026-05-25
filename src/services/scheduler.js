@@ -2,12 +2,12 @@ const cron      = require('node-cron');
 const Anthropic = require('@anthropic-ai/sdk');
 const axios     = require('axios');
 const supabase  = require('../config/database');
-const { sendText } = require('./messenger');
+const { sendTextAs } = require('./messenger');
 const { delay }    = require('../utils/helpers');
 
 const client   = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const GROUP_ID = process.env.TELEGRAM_GROUP_ID;
-const BOT_LINK = 'https://t.me/ApplyBoardbot';
+const BOT_LINK = process.env.TELEGRAM_BOT_LINK || 'https://t.me/ApplyBoardbot';
 const MODEL    = 'claude-haiku-4-5-20251001';
 
 // ── Telegram API helper ───────────────────────────────────
@@ -327,7 +327,7 @@ const sendPrePaymentFollowUps = async () => {
         const message = await generatePrePaymentFollowUp(lead, orderedMessages);
         if (!message) continue;
 
-        await sendText(lead.phone_number, message);
+        await sendTextAs(lead.phone_number, message, 'scheduler');
 
         // Stamp last_interaction — creates a 12h grace before this lead is picked up again
         await supabase
@@ -454,7 +454,7 @@ const sendFollowUps = async () => {
         const message = await generateFollowUp(lead, orderedMessages);
         if (!message) continue;
 
-        await sendText(lead.phone_number, message);
+        await sendTextAs(lead.phone_number, message, 'scheduler');
 
         // Increment count + stamp — creates the correct gap before the next follow-up
         await supabase

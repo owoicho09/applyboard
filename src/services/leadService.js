@@ -4,14 +4,17 @@ const upsertLead = async (phone, data = {}) => {
   try {
     const { data: existing } = await supabase
       .from('leads')
-      .select('id')
+      .select('id, name')
       .eq('phone_number', phone)
       .single();
 
     if (existing) {
+      const updatePayload = { last_interaction: new Date().toISOString(), ...data };
+      // Never overwrite a confirmed name (e.g. WhatsApp display name re-appearing each message)
+      if (existing.name && data.name) delete updatePayload.name;
       await supabase
         .from('leads')
-        .update({ last_interaction: new Date().toISOString(), ...data })
+        .update(updatePayload)
         .eq('phone_number', phone);
     } else {
       await supabase

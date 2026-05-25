@@ -21,9 +21,11 @@ const handleIncoming = async (entry) => {
   }
 
   // 2–6. Run independent ops in parallel — markRead and state fetch don't depend on each other
+  // For non-text messages (audio, image, etc.) content is null — avoids polluting
+  // conversation history with the literal string 'audio' from msgType
   const content = message.text?.body
                || message.interactive?.button_reply?.id
-               || msgType;
+               || null;
 
   const [limited, state] = await Promise.all([
     isRateLimited(from),

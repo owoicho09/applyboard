@@ -1127,6 +1127,7 @@ const quickStatus = async (id, status, event) => {
 // ── LEAD MODAL ────────────────────────────────────────────
 const openLead = async (id) => {
   currentLeadId = id;
+  clearConvPoll();
   document.getElementById('modal-lead').classList.add('open');
   document.getElementById('modal-lead-body').innerHTML =
     `<div class="loading-state"><div class="spinner spinner-lg"></div>Loading...</div>`;
@@ -1215,15 +1216,18 @@ const openLead = async (id) => {
         </div>
 
         <div>
-          ${d.conversations?.length ? `
-            <div class="divider">Conversation (${d.conversations.length} messages)</div>
-            <div class="conv-scroll">
-              ${d.conversations.map(c=>`
-                <div class="conv-msg ${c.direction}">
-                  <div>${c.content||c.message_type||'—'}</div>
-                  <div class="conv-msg-meta">${c.direction} · ${fmtDate(c.created_at)}</div>
-                </div>`).join('')}
-            </div>` : ''}
+          <div class="divider">Conversation</div>
+          <div id="conv-thread-${l.id}" style="height:260px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:10px">
+            <div style="font-size:12px;color:var(--text-3);text-align:center;padding:20px">Loading...</div>
+          </div>
+          <div id="conv-last-${l.id}" style="font-size:11px;color:var(--text-3);margin:4px 0 6px;text-align:right;min-height:14px"></div>
+          <div style="display:flex;gap:6px;margin-bottom:12px">
+            <textarea id="conv-compose-${l.id}" placeholder="Type a message... (Enter to send)" style="flex:1;border:1px solid var(--border);border-radius:var(--radius);padding:7px 10px;font-size:12px;font-family:inherit;resize:none;height:58px;outline:none;transition:border-color .15s" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendConvMessage('${l.id}','${l.phone_number}')}"></textarea>
+            <button class="btn btn-primary btn-sm" style="align-self:flex-end" onclick="sendConvMessage('${l.id}','${l.phone_number}')">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              Send
+            </button>
+          </div>
 
           ${d.payments?.length ? `
             <div class="divider">Payments</div>
@@ -1246,6 +1250,7 @@ const openLead = async (id) => {
     `;
     // Load activity log
     loadActivity(l.id);
+    initConvThread(l.id, l.phone_number, d.conversations || []);
   } catch(e) {
     document.getElementById('modal-lead-body').innerHTML =
       `<div style="color:var(--danger);padding:16px;font-size:13px">${e.message}</div>`;
@@ -1505,7 +1510,10 @@ const doImport = async () => {
 };
 
 // ── MODALS ────────────────────────────────────────────────
-const closeModal = (id) => document.getElementById(id).classList.remove('open');
+const closeModal = (id) => {
+  document.getElementById(id).classList.remove('open');
+  if (id === 'modal-lead') clearConvPoll();
+};
 document.querySelectorAll('.modal-backdrop').forEach(el => {
   el.addEventListener('click', e => { if (e.target===el) el.classList.remove('open'); });
 });
@@ -1612,6 +1620,112 @@ const sendGroupMessage = async () => {
   } finally {
     btn.disabled = false;
     btn.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Send to Group`;
+  }
+};
+
+// ── LIVE CONV THREAD ──────────────────────────────────────
+let _convPollTimer = null;
+let _convLastTs    = null;
+
+const escHtml = (s) => String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+const senderLabel = (msg) => {
+  if (msg.direction === 'inbound') return 'Client';
+  const s = msg.sent_by || 'bot';
+  if (s === 'bot')       return 'Ade (Bot)';
+  if (s === 'scheduler') return 'Auto';
+  return s.includes('@') ? s.split('@')[0] : s;
+};
+
+const renderConvMsg = (msg) => `
+  <div class="conv-msg ${msg.direction}" style="max-width:85%">
+    <div>${escHtml(msg.content || msg.message_type || '—')}</div>
+    <div class="conv-msg-meta">${senderLabel(msg)} · ${fmtDate(msg.created_at)}</div>
+  </div>`;
+
+const clearConvPoll = () => {
+  if (_convPollTimer) { clearInterval(_convPollTimer); _convPollTimer = null; }
+  _convLastTs = null;
+};
+
+const updateDupeWarning = (leadId, msg) => {
+  const el = document.getElementById(`conv-last-${leadId}`);
+  if (!el) return;
+  el.textContent = msg ? `Last: ${senderLabel(msg)} · ${ago(msg.created_at)}` : '';
+};
+
+const initConvThread = (leadId, phone, initialMsgs) => {
+  clearConvPoll();
+  _convLastTs = initialMsgs.length
+    ? initialMsgs[initialMsgs.length - 1].created_at
+    : new Date().toISOString();
+
+  const thread = document.getElementById(`conv-thread-${leadId}`);
+  if (!thread) return;
+
+  if (initialMsgs.length) {
+    thread.innerHTML = initialMsgs.map(renderConvMsg).join('');
+    thread.scrollTop = thread.scrollHeight;
+    updateDupeWarning(leadId, initialMsgs[initialMsgs.length - 1]);
+  } else {
+    thread.innerHTML = `<div style="font-size:12px;color:var(--text-3);text-align:center;padding:20px">No messages yet</div>`;
+  }
+
+  _convPollTimer = setInterval(() => pollConv(leadId, phone), 5000);
+};
+
+const pollConv = async (leadId, phone) => {
+  if (!_convLastTs) return;
+  try {
+    const msgs = await api(`/admin/api/leads/${leadId}/conversations?since=${encodeURIComponent(_convLastTs)}`);
+    if (!msgs.length) return;
+
+    const thread = document.getElementById(`conv-thread-${leadId}`);
+    if (!thread) { clearConvPoll(); return; }
+
+    const wasAtBottom = thread.scrollHeight - thread.scrollTop - thread.clientHeight < 60;
+
+    thread.querySelectorAll('[data-optimistic]').forEach(el => el.remove());
+
+    const frag = document.createDocumentFragment();
+    msgs.forEach(msg => {
+      const div = document.createElement('div');
+      div.innerHTML = renderConvMsg(msg).trim();
+      frag.appendChild(div.firstElementChild);
+    });
+    thread.appendChild(frag);
+
+    _convLastTs = msgs[msgs.length - 1].created_at;
+    updateDupeWarning(leadId, msgs[msgs.length - 1]);
+    if (wasAtBottom) thread.scrollTop = thread.scrollHeight;
+  } catch(e) { /* skip this poll cycle */ }
+};
+
+const sendConvMessage = async (leadId, phone) => {
+  const compose = document.getElementById(`conv-compose-${leadId}`);
+  const text = compose?.value?.trim();
+  if (!text || compose.disabled) return;
+
+  compose.value = '';
+  compose.disabled = true;
+
+  const thread = document.getElementById(`conv-thread-${leadId}`);
+  const opt = document.createElement('div');
+  opt.className = 'conv-msg outbound';
+  opt.style.cssText = 'max-width:85%;opacity:.65';
+  opt.setAttribute('data-optimistic', '1');
+  opt.innerHTML = `<div>${escHtml(text)}</div><div class="conv-msg-meta">Sending...</div>`;
+  thread.appendChild(opt);
+  thread.scrollTop = thread.scrollHeight;
+
+  try {
+    await api('/admin/api/message', { method:'POST', body: JSON.stringify({ phone, message: text }) });
+  } catch(e) {
+    opt.remove();
+    toast('Send failed: ' + e.message, 'error');
+  } finally {
+    compose.disabled = false;
+    compose.focus();
   }
 };
 </script>

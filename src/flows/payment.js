@@ -1,7 +1,7 @@
 const { sendText }           = require('../services/messenger');
 const { setState, getState } = require('../utils/stateManager');
 const { updateLead }         = require('../services/leadService');
-const { MESSAGES, STAGES, BTN, REGISTRATION_FEE } = require('../config/constants');
+const { MESSAGES, STAGES, BTN, REGISTRATION_FEE, COMPANY } = require('../config/constants');
 const { formatCurrency }     = require('../utils/helpers');
 const supabase               = require('../config/database');
 
@@ -54,9 +54,15 @@ const handlePayment = async (from, action, state) => {
       console.error('[PAYMENT] Paystack init error:', err.message);
       return sendText(
         from,
-        `Having a small issue generating the link right now. Reach us directly on ${process.env.BUSINESS_PHONE || '+234 706 345 9820'} and we sort it immediately.`
+        `Having a small issue generating the link right now. Reach us directly on ${process.env.BUSINESS_PHONE || COMPANY.phone} and we sort it immediately.`
       );
     }
+  }
+
+  // ── Bank transfer — Paystack handles it, no account number needed ─
+  if (action === BTN.PAY_BANK) {
+    const url = state.data?.payment_url;
+    return sendText(from, MESSAGES.paystackTransfer(url));
   }
 
   // ── Installment plan ──────────────────────────────────
@@ -80,7 +86,7 @@ const onPaymentConfirmed = async (phone, amount, reference) => {
     const { sendText: send } = require('../services/messenger');
     await send(
       phone,
-      `Payment confirmed. You are in.\n\nReference: ${reference}\n\nNext step — book your session with our team directly here:\n\nhttps://calendly.com/applyboardafrica-info/new-meeting\n\nPick a time that works for you and they will be ready with everything they need about your case.`
+      `Payment confirmed. You are in.\n\nReference: ${reference}\n\nNext step — book your session with our team directly here:\n\n${process.env.CALENDLY_URL || COMPANY.calendly}\n\nPick a time that works for you and they will be ready with everything they need about your case.`
     );
 
     // ── Notify owner of confirmed payment ────────────────

@@ -7,7 +7,7 @@ const {
 } = require('./dashboardAuth');
 const supabase         = require('../config/database');
 const { sendBroadcast } = require('../services/broadcast');
-const { sendText, sendButtons }      = require('../services/messenger');
+const { sendText, sendTextAs, sendButtons } = require('../services/messenger');
 
 // ── Serve dashboard HTML ──────────────────────────────────
 router.get('/', (req, res) => {
@@ -207,8 +207,8 @@ router.get('/api/leads/:id', async (req, res) => {
     if (error) throw error;
 
     const { data: conversations } = await supabase
-      .from('conversations').select('*').eq('lead_id', req.params.id)
-      .order('created_at', { ascending: true }).limit(50);
+      .from('conversations').select('*').eq('phone_number', lead.phone_number)
+      .order('created_at', { ascending: true }).limit(100);
 
     const { data: payments } = await supabase
       .from('payments').select('*').eq('lead_id', req.params.id)
@@ -430,24 +430,49 @@ router.post('/api/message', express.json(), async (req, res) => {
       .eq('phone_number', phone)
       .single();
 
+    const adminId = req.admin?.email || req.admin?.username || 'admin';
+
+    let sendResult;
     if (lead?.payment_status === 'pending') {
-      await sendButtons(phone, message, [
-        { id: 'PAY_NOW', title: '💳 Regenerate payment link' }
+      sendResult = await sendButtons(phone, message, [
+        { id: 'PAY_NOW', title: '💳 Regenerate payment link' },
       ]);
     } else {
-      await sendText(phone, message);
+      sendResult = await sendTextAs(phone, message, adminId);
     }
 
-    await supabase.from('conversations').insert({
-      phone_number: phone,
-      direction:    'outbound',
-      message_type: 'text',
-      content:      message,
-    });
+    // WhatsApp Cloud API can return HTTP 200 with an error body — axios won't throw for these.
+    // Check explicitly so a silent API rejection doesn't become a false success to the team.
+    if (sendResult?.error) {
+      console.error('[ADMIN] WhatsApp rejected message to', phone, JSON.stringify(sendResult.error));
+      return res.status(502).json({
+        error:   'WhatsApp API rejected the message — it was not delivered',
+        detail:  sendResult.error?.message || 'Unknown WhatsApp error',
+        wa_code: sendResult.error?.code    || null,
+      });
+    }
 
-    res.json({ success: true });
+    // A successful WhatsApp send always includes a message ID. No ID = not queued.
+    // Skip this check for Telegram (different response shape).
+    if (!phone.startsWith('tg_') && !sendResult?.messages?.[0]?.id) {
+      console.error('[ADMIN] WhatsApp send: no message ID returned for', phone, JSON.stringify(sendResult));
+      return res.status(502).json({
+        error: 'Message may not have been delivered — WhatsApp returned no message ID',
+      });
+    }
+
+    // Note: sendText/sendButtons already log to the conversations table via logOutbound()
+    // in messenger.js (fire-and-forget, includes lead_id). No second insert needed here.
+
+    res.json({ success: true, message_id: sendResult?.messages?.[0]?.id || null });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    // Hard HTTP errors (4xx/5xx from WhatsApp API, network timeouts, etc.)
+    const waError = err.response?.data?.error;
+    console.error('[ADMIN] Direct message failed to', req.body?.phone, waError || err.message);
+    res.status(500).json({
+      error:  waError?.message || err.message,
+      detail: waError ? `WhatsApp error code ${waError.code}` : null,
+    });
   }
 });
 
@@ -480,6 +505,33 @@ router.post('/api/group-message', express.json(), async (req, res) => {
   }
 });
 
+
+// ════════════════════════════════════════════════════════
+// CONVERSATIONS — incremental polling endpoint
+// ════════════════════════════════════════════════════════
+router.get('/api/leads/:id/conversations', async (req, res) => {
+  try {
+    const { since } = req.query;
+    const { data: lead } = await supabase
+      .from('leads').select('phone_number').eq('id', req.params.id).single();
+    if (!lead) return res.status(404).json({ error: 'Lead not found' });
+
+    let query = supabase
+      .from('conversations')
+      .select('*')
+      .eq('phone_number', lead.phone_number)
+      .order('created_at', { ascending: true })
+      .limit(100);
+
+    if (since) query = query.gt('created_at', since);
+
+    const { data, error } = await query;
+    if (error) throw error;
+    res.json(data || []);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // ════════════════════════════════════════════════════════
 // LEAD ACTIVITY LOG

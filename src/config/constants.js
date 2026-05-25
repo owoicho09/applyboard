@@ -15,6 +15,7 @@ const COMPANY = {
   clients:     '5,000+',
   successRate: '95%+',
   countries:   '50+',
+  calendly:    'https://calendly.com/applyboardafrica-info/new-meeting',
 };
 
 const BANK = {
@@ -121,13 +122,10 @@ const MESSAGES = {
   },
 
   fallback:
-    `Something went wrong on my end. Give me a moment and try again, or reach us directly on ${'+234 706 345 9820'}`,
+    `Something went wrong on my end. Give me a moment and try again, or reach us directly on ${COMPANY.phone}`,
 
   rateLimit:
     `You are sending messages quite fast. Give me a second to catch up.`,
-
-  bankTransfer: () =>
-    `Bank details:\n\nBank: ${BANK.bankName}\nAccount Name: ${BANK.accountName}\nAccount Number: ${BANK.accountNo}\n\nAfter sending, type "I have paid" with your receipt and we confirm within the hour.\n\nUse your phone number as the payment description.`,
 
   paystackTransfer: (url) => url
     ? `We only process payments through Paystack — it accepts card, bank transfer, and USSD all in one place, no card required.\n\nHere is your secure link:\n\n${url}\n\nSelect "Bank Transfer" on the Paystack page and it will give you the transfer details. Confirmation comes through automatically once done.`
@@ -237,6 +235,7 @@ const BTN = {
 
   // Payment
   PAY_NOW:     'PAY_NOW',
+  PAY_BANK:    'PAY_BANK',
   PAY_INSTALL: 'PAY_INSTALL',
 
   // Misc

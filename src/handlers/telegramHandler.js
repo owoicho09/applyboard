@@ -65,7 +65,7 @@ const handleTelegram = async (update) => {
 
       // If button tapped in a group reply to the group
       if (isGroup(query.message?.chat)) {
-        setReplyChat(chatId);
+        setReplyChat(phone, chatId);
       }
 
       const { handleButton } = require('./buttonHandler');
@@ -136,7 +136,7 @@ const handleTelegram = async (update) => {
         console.log(`[TELEGRAM] Group mention userId=${userId} chatId=${chatId} stage=${state.stage} text="${cleanText.slice(0, 50)}"`);
 
         // Tell messenger to reply to the GROUP not the user's DM
-        setReplyChat(chatId);
+        setReplyChat(phone, chatId);
 
         const { handleText } = require('./textHandler');
         await handleText(phone, sanitizeText(cleanText), state, { platform: 'telegram', chatId });

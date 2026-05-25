@@ -39,6 +39,7 @@ const ROUTE_MAP = {
   [BTN.SA_AUS]:     (f, s) => handleStudyAbroad(f, BTN.SA_AUS, s),
   [BTN.SA_IRELAND]: (f, s) => handleStudyAbroad(f, BTN.SA_IRELAND, s),
   [BTN.SA_NZ]:      (f, s) => handleStudyAbroad(f, BTN.SA_NZ, s),
+  [BTN.SA_BRAZIL]:  (f, s) => handleStudyAbroad(f, BTN.SA_BRAZIL, s),
   [BTN.SA_OTHER]:   (f, s) => handleStudyAbroad(f, BTN.SA_OTHER, s),
 
   // Program levels

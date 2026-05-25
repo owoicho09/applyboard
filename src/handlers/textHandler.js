@@ -1,6 +1,6 @@
 const { sendText, sendButtons } = require('../services/messenger');
-const { getState, setState }    = require('../utils/stateManager');
-const { STAGES, MESSAGES }      = require('../config/constants');
+const { getState, setState, tryLock, releaseLock } = require('../utils/stateManager');
+const { STAGES, MESSAGES, COMPANY } = require('../config/constants');
 const { sanitizeText }          = require('../utils/validators');
 const { updateLead }            = require('../services/leadService');
 
@@ -103,7 +103,7 @@ const handleText = async (from, text, state, message) => {
   if (matchesHard(lower, HARD_TRIGGERS.paid)) {
     return sendText(
       from,
-      `Got it. Payment notification received.\n\nOur team will confirm within 1 hour during business hours.\n\nReference: ${state.data?.payment_ref || 'N/A'}\n\n${process.env.BUSINESS_PHONE || '+234 706 345 9820'}`
+      `Got it. Payment notification received.\n\nOur team will confirm within 1 hour during business hours.\n\nReference: ${state.data?.payment_ref || 'N/A'}\n\n${process.env.BUSINESS_PHONE || COMPANY.phone}`
     );
   }
 
@@ -250,6 +250,10 @@ When user clearly confirms they want to pay, OR right after answering a trust ob
   }
 
   // ── 7. AI handles everything ──────────────────────────
+  const acquired = await tryLock(from);
+  if (!acquired) {
+    return sendText(from, `Still working on your last message — give me just a second.`);
+  }
   try {
     const { askAI } = require('../services/ai');
 
@@ -296,6 +300,8 @@ When user clearly confirms they want to pay, OR right after answering a trust ob
       from,
       `Something went wrong on my end. Give me a moment and try again.`
     );
+  } finally {
+    await releaseLock(from);
   }
 };
 
@@ -342,23 +348,34 @@ const detectAndSaveSignals = async (from, lower, state) => {
       }
     }
 
+    // Returns true if a negation word ("no loan", "don't need a visa") precedes the keyword
+    const isNegated = (text, keyword) => {
+      const idx = text.indexOf(keyword);
+      if (idx === -1) return false;
+      const before = text.slice(Math.max(0, idx - 35), idx);
+      return /\b(no|not|don'?t|never|without|no need for|avoid|instead of)\b/.test(before);
+    };
+
     if (
       (lower.includes('study') || lower.includes('university') ||
        lower.includes('school') || lower.includes('masters') ||
        lower.includes('degree') || lower.includes('admission')) &&
-      !state.data?.service_interested
+      !state.data?.service_interested &&
+      !isNegated(lower, 'study')
     ) {
       updates.service_interested = 'study_abroad';
     } else if (
       (lower.includes('visa') || lower.includes('embassy') ||
        lower.includes('immigration')) &&
-      !state.data?.service_interested
+      !state.data?.service_interested &&
+      !isNegated(lower, 'visa')
     ) {
       updates.service_interested = 'visa';
     } else if (
       (lower.includes('loan') || lower.includes('scholarship') ||
        lower.includes('funding') || lower.includes('finance')) &&
-      !state.data?.service_interested
+      !state.data?.service_interested &&
+      !isNegated(lower, 'loan') && !isNegated(lower, 'scholarship')
     ) {
       updates.service_interested = 'loan';
       updates.loan_interest      = true;
@@ -379,14 +396,17 @@ const detectAndSaveSignals = async (from, lower, state) => {
       }
     }
 
-    // Age detection
-    const ageMatch = lower.match(/\b(1[89]|[2-5][0-9])\b/);
-    if (ageMatch && !state.data?.age) {
-      const age = parseInt(ageMatch[1]);
-      if (age >= 18 && age <= 60) {
-        updates.age = age;
-        if (age > 32) {
-          updates.notes = `Age ${age} — loan only eligible for Canada and USA`;
+    // Age detection — require an explicit age indicator to avoid false positives on prices/durations
+    const hasAgeContext = /\b(age[d]?|i\s+am|i'?m|years?\s+old|yr[s]?\s+old|born\s+in)\b/.test(lower);
+    if (hasAgeContext) {
+      const ageMatch = lower.match(/\b(1[89]|[2-5][0-9])\b/);
+      if (ageMatch && !state.data?.age) {
+        const age = parseInt(ageMatch[1]);
+        if (age >= 18 && age <= 60) {
+          updates.age = age;
+          if (age > 32) {
+            updates.notes = `Age ${age} — loan only eligible for Canada and USA`;
+          }
         }
       }
     }

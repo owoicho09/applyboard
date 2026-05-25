@@ -6,20 +6,24 @@ const isTelegram = (to) => String(to).startsWith('tg_');
 const getChatId  = (to) => String(to).replace('tg_', '');
 
 // ── Reply override ────────────────────────────────────────
-let _replyOverride = null;
+// Keyed by phone (`to`) so concurrent messages from different Telegram groups
+// cannot steal each other's reply target.
+const _overrides = new Map();
 
-const setReplyChat = (chatId) => {
-  _replyOverride = chatId ? String(chatId) : null;
+const setReplyChat = (to, chatId) => {
+  if (chatId) _overrides.set(String(to), String(chatId));
+  else _overrides.delete(String(to));
 };
 
 const getReplyChat = (to) => {
-  const dest = _replyOverride || getChatId(to);
-  _replyOverride = null;
+  const key  = String(to);
+  const dest = _overrides.get(key) || getChatId(to);
+  _overrides.delete(key);
   return dest;
 };
 
 // ── Outbound message logger ───────────────────────────────
-const logOutbound = async (to, message) => {
+const logOutbound = async (to, message, sentBy = 'bot') => {
   try {
     // Get lead_id from leads table
     const { data: lead } = await supabase
@@ -34,6 +38,7 @@ const logOutbound = async (to, message) => {
       direction:    'outbound',
       message_type: 'text',
       content:      message,
+      sent_by:      sentBy,
       created_at:   new Date().toISOString(),
     });
   } catch (err) {
@@ -47,6 +52,14 @@ const sendText = async (to, text) => {
     ? await tg.sendText(getReplyChat(to), text)
     : await wa.sendText(to, text);
   logOutbound(to, text).catch(() => {});
+  return result;
+};
+
+const sendTextAs = async (to, text, sentBy = 'bot') => {
+  const result = isTelegram(to)
+    ? await tg.sendText(getReplyChat(to), text)
+    : await wa.sendText(to, text);
+  logOutbound(to, text, sentBy).catch(() => {});
   return result;
 };
 
@@ -89,6 +102,7 @@ const markRead = async (messageId, to = '') => {
 
 module.exports = {
   sendText,
+  sendTextAs,
   sendButtons,
   sendList,
   sendDocument,

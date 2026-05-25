@@ -11,6 +11,7 @@ const DESTINATIONS = {
   [BTN.SA_AUS]:     'Australia',
   [BTN.SA_IRELAND]: 'Ireland',
   [BTN.SA_NZ]:      'New Zealand',
+  [BTN.SA_BRAZIL]:  'Brazil',
   [BTN.SA_OTHER]:   'Other',
 };
 

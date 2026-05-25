@@ -3,7 +3,6 @@ const { setState }              = require('../utils/stateManager');
 const { updateLead }            = require('../services/leadService');
 const { STAGES, BTN }           = require('../config/constants');
 const { sanitizeName }          = require('../utils/validators');
-const supabase                  = require('../config/database');
 
 // Called when conversion moment is detected — not a "book a call" flow
 // This is the natural transition from conversation to registration payment
@@ -49,19 +48,6 @@ const completeRegistration = async (from, state) => {
     conversation_stage:    'registered',
     consultation_datetime: new Date().toISOString(),
   });
-
-  // Save consultation record
-  try {
-    const { error } = await supabase.from('consultations').insert({
-      phone_number:  from,
-      client_name:   name,
-      service_topic: service,
-      status:        'pending',
-    });
-    if (error) console.error('[CONSULT] DB error:', error.message);
-  } catch (err) {
-    console.error('[CONSULT] DB error:', err.message);
-  }
 
   // Notify the right staff
   const { notifyStaff } = require('../services/notificationService');

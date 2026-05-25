@@ -1,5 +1,6 @@
-const { sendText } = require('./messenger');
-const supabase     = require('../config/database');
+const { sendText }      = require('./messenger');
+const supabase          = require('../config/database');
+const { STAFF_ROUTING } = require('../config/constants');
 
 // Staff WhatsApp numbers — add to Railway environment variables
 const STAFF = {
@@ -29,20 +30,7 @@ const getStaffNumber = (service) => {
 };
 
 // Determine staff email for CRM reference
-const getStaffEmail = (service) => {
-  const routing = {
-    study_abroad: 'admissions@applyboardafrica.com',
-    visa:         'visa@applyboardafrica.com',
-    test_prep:    'support@applyboardafrica.com',
-    loan:         'admissions@applyboardafrica.com',
-    travel:       'info@applyboardafrica.com',
-    insurance:    'info@applyboardafrica.com',
-    pilgrimage:   'info@applyboardafrica.com',
-    pof:          'admissions@applyboardafrica.com',
-    default:      'info@applyboardafrica.com',
-  };
-  return routing[service] || routing.default;
-};
+const getStaffEmail = (service) => STAFF_ROUTING[service] || STAFF_ROUTING.default;
 
 // Build a complete brief for the staff member
 const buildStaffBrief = (phone, state, lead = {}) => {
