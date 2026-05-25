@@ -206,20 +206,28 @@ router.get('/api/leads/:id', async (req, res) => {
       .from('leads').select('*').eq('id', req.params.id).single();
     if (error) throw error;
 
-    // Query by both phone_number and lead_id — old rows may only have one, merge & deduplicate
+    // Query DESC so we always get the LATEST messages first, then reverse for chronological display.
+    // Run both phone_number and lead_id queries — old rows may only match one of them.
     const [convByPhone, convByLeadId] = await Promise.all([
       supabase.from('conversations').select('*').eq('phone_number', lead.phone_number)
-        .order('created_at', { ascending: true }).limit(100),
+        .order('created_at', { ascending: false }).limit(150),
       supabase.from('conversations').select('*').eq('lead_id', req.params.id)
-        .order('created_at', { ascending: true }).limit(100),
+        .order('created_at', { ascending: false }).limit(150),
     ]);
-    const seenIds = new Set();
+
+    // Deduplicate — use row.id if it exists, otherwise fall back to a compound key.
+    // This handles tables with or without an auto-generated id column.
+    const seenKeys = new Set();
     const allConvs = [];
     for (const row of [...(convByPhone.data || []), ...(convByLeadId.data || [])]) {
-      if (!seenIds.has(row.id)) { seenIds.add(row.id); allConvs.push(row); }
+      const key = row.id != null
+        ? `id:${row.id}`
+        : `${row.created_at}|${row.direction}|${(row.content || '').slice(0, 80)}`;
+      if (!seenKeys.has(key)) { seenKeys.add(key); allConvs.push(row); }
     }
+    // Sort ascending for display, then take the 100 most recent
     allConvs.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-    const conversations = allConvs.slice(0, 100);
+    const conversations = allConvs.slice(-100);
 
     const { data: payments } = await supabase
       .from('payments').select('*').eq('lead_id', req.params.id)
@@ -539,10 +547,13 @@ router.get('/api/leads/:id/conversations', async (req, res) => {
       buildQ('lead_id',      req.params.id),
     ]);
 
-    const seenIds = new Set();
+    const seenKeys = new Set();
     const msgs = [];
     for (const row of [...(byPhone.data || []), ...(byLeadId.data || [])]) {
-      if (!seenIds.has(row.id)) { seenIds.add(row.id); msgs.push(row); }
+      const key = row.id != null
+        ? `id:${row.id}`
+        : `${row.created_at}|${row.direction}|${(row.content || '').slice(0, 80)}`;
+      if (!seenKeys.has(key)) { seenKeys.add(key); msgs.push(row); }
     }
     msgs.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
     res.json(msgs.slice(0, 100));
