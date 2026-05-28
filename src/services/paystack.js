@@ -83,6 +83,12 @@ const handlePaystackWebhook = async (req, res) => {
     if (phone) {
       const { onPaymentConfirmed } = require('../flows/payment');
       await onPaymentConfirmed(phone, amount / 100, reference);
+    } else {
+      console.error(
+        '[PAYSTACK] charge.success — phone_number missing from metadata. Payment recorded but lead NOT notified.',
+        '| reference:', reference,
+        '| metadata:', JSON.stringify(metadata)
+      );
     }
   } catch (err) {
     console.error('[PAYSTACK] Webhook processing error:', err.message);

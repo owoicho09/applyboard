@@ -83,11 +83,24 @@ const onPaymentConfirmed = async (phone, amount, reference) => {
       conversation_stage: 'registered',
     });
 
-    const { sendText: send } = require('../services/messenger');
-    await send(
-      phone,
-      `Payment confirmed. You are in.\n\nReference: ${reference}\n\nNext step — book your session with our team directly here:\n\n${process.env.CALENDLY_URL || COMPANY.calendly}\n\nPick a time that works for you and they will be ready with everything they need about your case.`
-    );
+    // ── Client confirmation message ───────────────────────
+    // Isolated: a WhatsApp API failure (e.g. expired 24-hr session window,
+    // transient Meta error) must NOT block the owner/staff notifications below.
+    try {
+      const { sendText: send } = require('../services/messenger');
+      await send(
+        phone,
+        `Payment confirmed. You are in.\n\nReference: ${reference}\n\nNext step — book your session with our team directly here:\n\n${process.env.CALENDLY_URL || COMPANY.calendly}\n\nPick a time that works for you and they will be ready with everything they need about your case.`
+      );
+    } catch (sendErr) {
+      console.error(
+        '[PAYMENT] Client confirmation message failed — WhatsApp API rejected send.',
+        '| phone:', phone,
+        '| ref:', reference,
+        '| reason:', sendErr.response?.data || sendErr.message
+      );
+      // Do NOT return — owner and staff notifications must still fire.
+    }
 
     // ── Notify owner of confirmed payment ────────────────
     try {
@@ -101,12 +114,17 @@ const onPaymentConfirmed = async (phone, amount, reference) => {
       console.error('[PAYMENT] notify error:', e.message);
     }
 
-    // Route to the right staff member with full brief
-    const { notifyStaff } = require('../services/notificationService');
-    const state           = await getState(phone);
-    await notifyStaff(phone, state);
+    // ── Route to the right staff member with full brief ──
+    // Isolated: a staff routing failure must NOT block the state reset below.
+    try {
+      const { notifyStaff } = require('../services/notificationService');
+      const state           = await getState(phone);
+      await notifyStaff(phone, state);
+    } catch (staffErr) {
+      console.error('[PAYMENT] Staff notification failed:', staffErr.message, '| phone:', phone);
+    }
 
-    // Clear payment-awaiting state so user can converse normally after paying
+    // ── Clear payment-awaiting state ──────────────────────
     try {
       const { clearState } = require('../utils/stateManager');
       await clearState(phone);
