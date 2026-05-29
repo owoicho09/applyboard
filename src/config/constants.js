@@ -29,6 +29,14 @@ const BANK = {
 // NOT charged for Test Prep — they pay class fee directly
 const REGISTRATION_FEE = 10000; // ₦10,000
 
+// ─── STAFF MEMBERS (CRM assignment + WhatsApp notifications) ─
+const STAFF_MEMBERS = [
+  { name: 'Gift',    phone: '2349061371251' },
+  { name: 'Tomiwa', phone: '2347082502913' },
+  { name: 'Hermine', phone: '2348103788950' },
+  { name: 'Paulain', phone: '2347042520259' },
+];
+
 // ─── STAFF ROUTING ──────────────────────────────────────────
 const STAFF_ROUTING = {
   study_abroad: 'admissions@applyboardafrica.com',
@@ -303,6 +311,7 @@ module.exports = {
   COMPANY,
   BANK,
   REGISTRATION_FEE,
+  STAFF_MEMBERS,
   STAFF_ROUTING,
   COUNTRIES,
   LOAN_RULES,

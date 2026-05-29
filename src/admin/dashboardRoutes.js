@@ -6,6 +6,7 @@ const {
   loginUser, getDeptFromEmail, DEPT_SERVICES,
 } = require('./dashboardAuth');
 const supabase         = require('../config/database');
+const { STAFF_MEMBERS } = require('../config/constants');
 const { sendBroadcast } = require('../services/broadcast');
 const { sendText, sendTextAs, sendButtons } = require('../services/messenger');
 
@@ -627,6 +628,63 @@ router.post('/api/leads/import', express.json(), async (req, res) => {
 
     res.json({ success: true, imported: data?.length || 0 });
   } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ════════════════════════════════════════════════════════
+// STAFF ASSIGNMENT
+// ════════════════════════════════════════════════════════
+router.post('/api/leads/:id/assign', express.json(), async (req, res) => {
+  try {
+    const { staff_name } = req.body;
+    if (!staff_name) return res.status(400).json({ error: 'staff_name required' });
+
+    const staff = STAFF_MEMBERS.find(s => s.name === staff_name);
+    if (!staff) return res.status(400).json({ error: `Unknown staff member: ${staff_name}` });
+
+    const { data: lead, error: fetchErr } = await supabase
+      .from('leads').select('*').eq('id', req.params.id).single();
+    if (fetchErr) throw fetchErr;
+
+    const { data, error } = await supabase
+      .from('leads')
+      .update({ agent_assigned: staff.name, updated_at: new Date().toISOString() })
+      .eq('id', req.params.id)
+      .select().single();
+    if (error) throw error;
+
+    // Build WhatsApp notification message for the staff member
+    const baseUrl   = process.env.BASE_URL || '';
+    const dashLink  = `${baseUrl}/admin`;
+    const svcLabel  = lead.service_interested?.replace(/_/g, ' ') || 'Not specified';
+    const waMessage = [
+      `New lead assigned to you — ${lead.name || 'Unknown'}`,
+      ``,
+      `Name: ${lead.name || 'Not provided'}`,
+      `Phone: ${lead.phone_number}`,
+      `Service: ${svcLabel}`,
+      `Destination: ${lead.destination_country || 'Not specified'}`,
+      `Program Level: ${lead.program_level || 'Not specified'}`,
+      `Notes: ${lead.notes || 'None'}`,
+      ``,
+      `View in dashboard: ${dashLink}`,
+    ].join('\n');
+
+    await sendText(staff.phone, waMessage).catch((e) =>
+      console.error(`[ADMIN] Staff notify failed for ${staff.name}:`, e.message)
+    );
+
+    await supabase.from('lead_activity').insert({
+      lead_id:    req.params.id,
+      action:     `Assigned to ${staff.name}`,
+      done_by:    req.admin?.username || 'admin',
+      created_at: new Date().toISOString(),
+    }).catch(() => {});
+
+    res.json({ success: true, data });
+  } catch (err) {
+    console.error('[ADMIN] assign error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
