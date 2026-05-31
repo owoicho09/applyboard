@@ -297,6 +297,7 @@ const sendPrePaymentFollowUps = async () => {
       .is('payment_status', null)
       .lte('last_interaction', cutoffRecent)
       .gte('last_interaction', cutoffOld)
+      .order('last_interaction', { ascending: true })
       .limit(25);
 
     if (error || !rawLeads?.length) return;
@@ -421,6 +422,7 @@ const sendFollowUps = async () => {
       .select('phone_number, name, service_interested, destination_country, program_level, notes, test_prep_exam, followup_count, last_interaction')
       .eq('payment_status', 'pending')
       .lte('last_interaction', cutoff22h)
+      .order('last_interaction', { ascending: true })
       .limit(30);
 
     if (error || !rawLeads?.length) return;
@@ -491,7 +493,8 @@ const startScheduler = () => {
 
   // Sequence 2 — pre-payment re-engagement (dropped off before getting a link)
   // Runs 2x daily at offset times — gentler cadence, earlier in the funnel
-  const prePaymentTimes = ['0 10 * * *', '0 19 * * *'];
+  // Intentionally offset from pending follow-ups (10am/6pm) to avoid concurrent sends
+  const prePaymentTimes = ['0 9 * * *', '0 19 * * *'];
   for (const schedule of prePaymentTimes) {
     cron.schedule(schedule, () => {
       console.log('[SCHEDULER] Firing pre-payment re-engagement...');
@@ -501,7 +504,7 @@ const startScheduler = () => {
 
   console.log('[SCHEDULER] All jobs scheduled:');
   console.log('[SCHEDULER]   Pending follow-ups       → 10am, 6pm WAT (day-1/3/7 cadence per lead)');
-  console.log('[SCHEDULER]   Pre-payment re-engagement → 10am, 7pm WAT');
+  console.log('[SCHEDULER]   Pre-payment re-engagement → 9am, 7pm WAT');
 
   if (!GROUP_ID) {
     console.warn('[SCHEDULER] TELEGRAM_GROUP_ID not set — group jobs disabled');
