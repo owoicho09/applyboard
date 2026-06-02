@@ -20,7 +20,7 @@ router.post('/auth/token', express.json(), async (req, res) => {
   try {
     if (req.body?.email && req.body?.password) {
       const user  = await loginUser(req.body.email, req.body.password);
-      const dept  = getDeptFromEmail(user.email);
+      const dept  = user.department || getDeptFromEmail(user.email);
       const token = generateToken(user.email, user.role, dept);
       return res.json({
         token,
