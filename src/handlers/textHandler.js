@@ -252,7 +252,7 @@ When user clearly confirms they want to pay, OR right after answering a trust ob
   // ── 7. AI handles everything ──────────────────────────
   const acquired = await tryLock(from);
   if (!acquired) {
-    return sendText(from, `Still working on your last message — give me just a second.`);
+    return; // previous message still processing — drop silently rather than sending a visible lockout message
   }
   try {
     const { askAI } = require('../services/ai');

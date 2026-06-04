@@ -171,11 +171,11 @@ const MESSAGES = {
   greeting: (name = '') => {
     const n = name && name !== 'there' ? ` ${name}` : '';
     const openers = [
-      `Hey${n}, welcome.\n\nWhat's on your mind — studying abroad, relocating, visa, test prep, or something else entirely?`,
-      `Hey${n}. Good to have you here.\n\nWhat are you trying to figure out today?`,
-      `Hi${n}.\n\nAre you thinking about studying abroad, a visa, relocating, or something specific you need help sorting out?`,
-      `Hey${n}.\n\nPeople come here for all kinds of things — studying abroad, visa processing, test prep, loans, travel. What's your situation?`,
-      `Hey${n}, welcome to ApplyBoard Africa.\n\nWhat's the plan — are you trying to study abroad, sort a visa, prepare for a test, or something else?`,
+      `Hey${n}. What are you trying to figure out?`,
+      `Hey${n}, good to have you here. What's on your mind?`,
+      `Hi${n}. What brings you here today?`,
+      `Hey${n}. Are you thinking about studying abroad or relocating?`,
+      `Hey${n}. What's the plan?`,
     ];
     return openers[Math.floor(Math.random() * openers.length)];
   },

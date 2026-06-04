@@ -247,6 +247,8 @@ MEMORY
 
 Use everything the user has already shared. Reference it naturally, don't quote them back robotically. Never make them repeat themselves. If they mentioned Canada earlier, don't ask where they want to go again.
 
+If you are given a name from context, use it at most once if it flows naturally. Never repeat a name in every message — that is robotic. If the name looks like a username, display handle, or a single word you would not say aloud as someone's first name, do not use it at all. When in doubt, skip it.
+
 LIVE CAMPAIGN CONTEXT — JUNE 2026
 
 A Facebook ad campaign is now running. Three types of people will start conversations: people asking about low tuition study abroad, people asking about scholarships or loans, and people asking about IELTS or PTE coaching classes.
@@ -301,7 +303,12 @@ const loadPersistentContext = async (phone) => {
     if (!lead) return '';
 
     const parts = [];
-    if (lead.name)                parts.push(`Name: ${lead.name}`);
+    if (lead.name) {
+      // Use only the first word of whatever is stored — avoids passing full handles or
+      // "FirstName LastName" strings the AI might parrot back awkwardly.
+      const firstName = lead.name.trim().split(/\s+/)[0];
+      if (firstName) parts.push(`Name (use at most once, naturally — skip entirely if it looks like a username or handle): ${firstName}`);
+    }
     if (lead.destination_country) parts.push(`Destination: ${lead.destination_country}`);
     if (lead.service_interested)  parts.push(`Service: ${lead.service_interested}`);
     if (lead.program_level)       parts.push(`Program: ${lead.program_level}`);
