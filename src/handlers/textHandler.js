@@ -6,20 +6,32 @@ const { updateLead }            = require('../services/leadService');
 
 const HARD_TRIGGERS = {
   menu:  ['menu', 'main menu', 'home', 'restart', 'start over'],
-  paid:  ['i have paid', 'i paid', 'payment done', 'transfer done', 'i sent the money', 'i made payment'],
+  paid:  [
+    'i have paid', 'i paid', 'payment done', 'transfer done',
+    'i sent the money', 'i made payment', 'payment successful',
+    'done paying', 'money sent', 'i have transferred', 'just paid now',
+    'i transferred', 'payment made', 'i just paid',
+  ],
   agent: ['speak to agent', 'talk to human', 'real person', 'speak to someone', 'call me', 'i want to call'],
   // Catches any request for bank account details — response is hardcoded, never touches the AI
   bank:  [
     'account number', 'bank account', 'account details',
     'gtbank', 'another account', 'different account',
-    "don't do online", 'no online', 'cant do online', "can't do online",
-    'send to account', 'direct transfer',
+    "don't do online", 'dont do online', 'no online', 'cant do online', "can't do online",
+    'send to account', 'direct transfer', 'transfer to you', 'send directly to',
     'send me account', 'give me account', 'account number please',
   ],
 };
 
-const matchesHard = (text, keywords) =>
-  keywords.some((kw) => text.toLowerCase().includes(kw.toLowerCase()));
+// Normalise apostrophes and smart quotes before keyword matching so
+// "dont" and "don't" both hit the same trigger.
+const normaliseText = (s) =>
+  s.replace(/[‘’ʼ]/g, "'").replace(/[“”]/g, '"');
+
+const matchesHard = (text, keywords) => {
+  const normalised = normaliseText(text.toLowerCase());
+  return keywords.some((kw) => normalised.includes(kw.toLowerCase()));
+};
 
 // Strip markdown formatting symbols from WhatsApp messages.
 // WhatsApp renders these as literal characters — the AI sometimes forgets the rule.
@@ -44,31 +56,33 @@ const EXAM_AMOUNTS = {
 };
 
 const getPaymentAmount = (state) => {
-  // Check exam field first — most reliable
+  const { REGISTRATION_FEE } = require('../config/constants');
+
+  // Explicit exam field is the most reliable signal — always trust it first
   const exam = (state.data?.exam || '').toLowerCase();
   for (const [key, amount] of Object.entries(EXAM_AMOUNTS)) {
     if (exam.includes(key)) return amount;
   }
 
-  // Check service field
-  const service = (state.data?.service || '').toLowerCase();
-  for (const [key, amount] of Object.entries(EXAM_AMOUNTS)) {
-    if (service.includes(key)) return amount;
+  // If service_interested is set and is NOT test_prep, this is a registration payment.
+  // Do NOT scan chat history — a study abroad lead who mentioned IELTS in passing
+  // must be charged ₦10,000, not ₦85,000.
+  const serviceInterested = (state.data?.service_interested || '').toLowerCase();
+  if (serviceInterested && serviceInterested !== 'test_prep') {
+    return REGISTRATION_FEE;
   }
 
-  // Check chat history for exam mentions
-  const history = state.data?.chatHistory || [];
-  const allText = history
-    .map(h => h.content || '')
-    .join(' ')
-    .toLowerCase();
-
-  for (const [key, amount] of Object.entries(EXAM_AMOUNTS)) {
-    if (allText.includes(key)) return amount;
+  // For test_prep service with no explicit exam field, scan history as a fallback.
+  // This only runs when we genuinely don't know which exam the user wants.
+  if (serviceInterested === 'test_prep') {
+    const history = state.data?.chatHistory || [];
+    const allText = history.map(h => h.content || '').join(' ').toLowerCase();
+    for (const [key, amount] of Object.entries(EXAM_AMOUNTS)) {
+      if (allText.includes(key)) return amount;
+    }
   }
 
-  // Default registration fee
-  return 10000;
+  return REGISTRATION_FEE;
 };
 
 
@@ -265,13 +279,20 @@ When user clearly confirms they want to pay, OR right after answering a trust ob
 
     const tagPresent = aiReply.includes('[[SEND_PAYMENT_LINK]]');
 
+    // Catches phrases where the AI described sending a link instead of using the tag.
+    // Mirrors the same pattern used in the PAYMENT_AWAITING handler.
+    const narrationPattern = /\b(send(ing)? (you )?(the |a )?(payment )?link|link (is |being )?(sent|on its way)|here.{0,10}(payment )?link|your (payment )?link (is )?coming)\b/i;
+    const aiNarratedLink   = !tagPresent && narrationPattern.test(aiReply);
+
+    const shouldSendLink = tagPresent || aiNarratedLink;
+
     // Strip tag and — for WhatsApp — strip any markdown the AI leaked
     let cleanReply = aiReply.replace('[[SEND_PAYMENT_LINK]]', '').trim();
     if (!from.startsWith('tg_')) cleanReply = stripWhatsAppMarkdown(cleanReply);
 
     if (cleanReply) await sendText(from, cleanReply);
 
-    if (tagPresent) {
+    if (shouldSendLink) {
       const freshState = await getState(from);
       const d          = freshState.data || {};
       const hasContext = !!(d.name || d.destination || d.service_interested || d.destination_country);
@@ -279,12 +300,19 @@ When user clearly confirms they want to pay, OR right after answering a trust ob
       if (!hasContext) {
         // No qualification data yet — block the payment trigger
         console.log('[GUARDRAIL] Payment tag blocked — no context collected');
+      } else if (d.payment_status === 'paid') {
+        // Lead already paid — never charge again regardless of what the AI said
+        console.log('[GUARDRAIL] Payment tag blocked — lead already paid');
+      } else if (d.service_interested === 'test_prep' && !d.exam) {
+        // Test prep without a confirmed exam — AI fired the tag incorrectly.
+        // Test prep does not use the ₦10,000 registration; clients pay class fees directly.
+        console.log('[GUARDRAIL] Payment tag blocked — test_prep service, no exam confirmed');
       } else if (d.payment_url) {
         // Link already generated this session — resend stored URL (FREE_TEXT_AI dedup)
-        console.log('[PAYMENT TRIGGER] FREE_TEXT_AI — resending existing link (dedup)');
+        console.log(`[PAYMENT TRIGGER] FREE_TEXT_AI — resending existing link tag=${tagPresent} narration=${aiNarratedLink}`);
         await sendText(from, `Here is your payment link:\n\n${d.payment_url}\n\nPay with card, bank transfer, or USSD. Confirmation comes through automatically once done.`);
       } else {
-        console.log('[PAYMENT TRIGGER] AI flagged payment — generating link...');
+        console.log(`[PAYMENT TRIGGER] AI flagged payment — generating link tag=${tagPresent} narration=${aiNarratedLink}`);
         const { handlePayment } = require('../flows/payment');
         const amount             = getPaymentAmount(state);
         const { updateData }     = require('../utils/stateManager');
@@ -356,7 +384,17 @@ const detectAndSaveSignals = async (from, lower, state) => {
       return /\b(no|not|don'?t|never|without|no need for|avoid|instead of)\b/.test(before);
     };
 
+    // Loan/scholarship checked FIRST — "loan for my masters" contains "masters" which would
+    // otherwise trigger study_abroad before reaching this branch.
     if (
+      (lower.includes('loan') || lower.includes('scholarship') ||
+       lower.includes('funding') || lower.includes('finance')) &&
+      !state.data?.service_interested &&
+      !isNegated(lower, 'loan') && !isNegated(lower, 'scholarship')
+    ) {
+      updates.service_interested = 'loan';
+      updates.loan_interest      = true;
+    } else if (
       (lower.includes('study') || lower.includes('university') ||
        lower.includes('school') || lower.includes('masters') ||
        lower.includes('degree') || lower.includes('admission')) &&
@@ -371,14 +409,6 @@ const detectAndSaveSignals = async (from, lower, state) => {
       !isNegated(lower, 'visa')
     ) {
       updates.service_interested = 'visa';
-    } else if (
-      (lower.includes('loan') || lower.includes('scholarship') ||
-       lower.includes('funding') || lower.includes('finance')) &&
-      !state.data?.service_interested &&
-      !isNegated(lower, 'loan') && !isNegated(lower, 'scholarship')
-    ) {
-      updates.service_interested = 'loan';
-      updates.loan_interest      = true;
     } else if (
       (lower.includes('ielts') || lower.includes('toefl') ||
        lower.includes('gre')   || lower.includes('gmat') ||

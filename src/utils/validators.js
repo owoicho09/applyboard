@@ -24,7 +24,11 @@ const sanitizeText = (text) => {
     .trim()
     .replace(/[<>{}[\]\\]/g, '')          // Remove HTML/JSON special chars
     .replace(/(\b)(SELECT|INSERT|UPDATE|DELETE|DROP|UNION|--)\b/gi, '') // SQL keywords
-    .slice(0, 2000);                       // Cap at 2000 chars — 500 was silently dropping long messages
+    // Strip prompt-injection patterns — phrases that attempt to override system instructions
+    .replace(/\b(INSTRUCTION|SYSTEM|PROMPT|OVERRIDE|IGNORE PREVIOUS|FORGET EVERYTHING|NEW ROLE|YOUR NEW|DISREGARD)(\s*:|\s+ABOVE|\s+INSTRUCTIONS?|\s+RULES?)/gi, '')
+    .replace(/\[Known context[^\]]*\]/gi, '')   // Strip fake context injections like [Known context: ...]
+    .replace(/\[\[.*?\]\]/g, '')                // Strip double-bracket tags like [[SEND_PAYMENT_LINK]]
+    .slice(0, 2000);                            // Cap at 2000 chars
 };
 
 /**
