@@ -1008,7 +1008,7 @@ const loadLeads = async (page = 0) => {
   try {
     const p = new URLSearchParams({ limit: PER_PAGE, offset: page * PER_PAGE, ...leadsFilters });
     const d = await api(`/admin/api/leads?${p}`);
-    const rows = d.data || [], total = d.total || rows.length;
+    const rows = d.data || [], total = d.total ?? rows.length;
     document.getElementById('leads-count-label').textContent = `${total} leads`;
     if (!rows.length) { tb.innerHTML = emptyRow(8, 'No leads found'); renderPg(total, page); return; }
     tb.innerHTML = rows.map(l => `

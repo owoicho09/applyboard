@@ -162,7 +162,7 @@ router.get('/api/leads', async (req, res) => {
 
     let query = supabase
       .from('leads')
-      .select('*')
+      .select('*', { count: 'exact' })
       .order(sort, { ascending: order === 'asc' })
       .range(Number(offset), Number(offset) + Number(limit) - 1);
 
