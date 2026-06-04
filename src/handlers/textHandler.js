@@ -13,7 +13,7 @@ const HARD_TRIGGERS = {
     'account number', 'bank account', 'account details',
     'gtbank', 'another account', 'different account',
     "don't do online", 'no online', 'cant do online', "can't do online",
-    'transfer directly', 'send to account', 'direct transfer',
+    'send to account', 'direct transfer',
     'send me account', 'give me account', 'account number please',
   ],
 };
