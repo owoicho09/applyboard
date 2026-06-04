@@ -4,7 +4,12 @@
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\HP\\\\Desktop\\\\Projects\\\\applyboard-bot\" -Force -ErrorAction SilentlyContinue)",
       "Bash(Select-Object -ExpandProperty Name)",
       "Bash(New-Item -ItemType File -Force -Path \"C:\\\\Users\\\\HP\\\\Desktop\\\\Projects\\\\applyboard-bot\\\\SYSTEM_MAP.md\")",
-      "Bash(Out-Null)"
+      "Bash(Out-Null)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(git commit *)",
+      "Bash(node *)"
     ]
   }
 }
