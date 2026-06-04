@@ -314,13 +314,44 @@ const sendPrePaymentFollowUps = async () => {
 
     for (const lead of leads) {
       try {
-        // Pull the last 6 real messages so the AI knows what was actually discussed
-        const { data: messages } = await supabase
-          .from('conversations')
-          .select('direction, content')
-          .eq('phone_number', lead.phone_number)
-          .order('created_at', { ascending: false })
-          .limit(6);
+        const isWhatsApp = !lead.phone_number.startsWith('tg_');
+
+        // Fetch conversation context and last inbound timestamp in parallel
+        const [{ data: messages }, { data: lastInboundRows }] = await Promise.all([
+          supabase
+            .from('conversations')
+            .select('direction, content')
+            .eq('phone_number', lead.phone_number)
+            .order('created_at', { ascending: false })
+            .limit(6),
+          isWhatsApp
+            ? supabase
+                .from('conversations')
+                .select('created_at')
+                .eq('phone_number', lead.phone_number)
+                .eq('direction', 'inbound')
+                .order('created_at', { ascending: false })
+                .limit(1)
+            : Promise.resolve({ data: [] }),
+        ]);
+
+        // WhatsApp blocks free-form text outside the 24h customer care window.
+        // Stamp last_interaction and skip — window may re-open if they message again.
+        if (isWhatsApp) {
+          const lastInboundAt = lastInboundRows?.[0]?.created_at;
+          const windowOpen    = lastInboundAt &&
+            (Date.now() - new Date(lastInboundAt).getTime()) < 24 * 60 * 60 * 1000;
+
+          if (!windowOpen) {
+            await supabase
+              .from('leads')
+              .update({ last_interaction: new Date().toISOString() })
+              .eq('phone_number', lead.phone_number)
+              .catch(() => {});
+            console.log(`[SCHEDULER] Skipping ${lead.phone_number} — WhatsApp 24h window closed`);
+            continue;
+          }
+        }
 
         // Reverse so oldest-first for the AI to read naturally
         const orderedMessages = (messages || []).reverse();
@@ -339,6 +370,12 @@ const sendPrePaymentFollowUps = async () => {
         await delay(1500);
       } catch (err) {
         console.error(`[SCHEDULER] Pre-payment follow-up failed ${lead.phone_number}:`, err.message);
+        // Stamp last_interaction so this lead doesn't immediately re-queue on the next run
+        await supabase
+          .from('leads')
+          .update({ last_interaction: new Date().toISOString() })
+          .eq('phone_number', lead.phone_number)
+          .catch(() => {});
       }
     }
 
@@ -443,13 +480,45 @@ const sendFollowUps = async () => {
 
     for (const lead of leads) {
       try {
-        // Pull last 4 messages from actual conversation — AI reads this, not just profile fields
-        const { data: recentMsgs } = await supabase
-          .from('conversations')
-          .select('direction, content')
-          .eq('phone_number', lead.phone_number)
-          .order('created_at', { ascending: false })
-          .limit(4);
+        const isWhatsApp = !lead.phone_number.startsWith('tg_');
+
+        // Fetch conversation context and last inbound timestamp in parallel
+        const [{ data: recentMsgs }, { data: lastInboundRows }] = await Promise.all([
+          supabase
+            .from('conversations')
+            .select('direction, content')
+            .eq('phone_number', lead.phone_number)
+            .order('created_at', { ascending: false })
+            .limit(4),
+          isWhatsApp
+            ? supabase
+                .from('conversations')
+                .select('created_at')
+                .eq('phone_number', lead.phone_number)
+                .eq('direction', 'inbound')
+                .order('created_at', { ascending: false })
+                .limit(1)
+            : Promise.resolve({ data: [] }),
+        ]);
+
+        // WhatsApp blocks free-form text outside the 24h customer care window.
+        // If the window is closed, stamp last_interaction to move this lead to the
+        // back of the queue without burning a follow-up attempt.
+        if (isWhatsApp) {
+          const lastInboundAt  = lastInboundRows?.[0]?.created_at;
+          const windowOpen     = lastInboundAt &&
+            (now - new Date(lastInboundAt).getTime()) < 24 * 60 * 60 * 1000;
+
+          if (!windowOpen) {
+            await supabase
+              .from('leads')
+              .update({ last_interaction: new Date().toISOString() })
+              .eq('phone_number', lead.phone_number)
+              .catch(() => {});
+            console.log(`[SCHEDULER] Skipping ${lead.phone_number} — WhatsApp 24h window closed`);
+            continue;
+          }
+        }
 
         const orderedMessages = (recentMsgs || []).reverse();
 
@@ -470,6 +539,13 @@ const sendFollowUps = async () => {
         await delay(1500);
       } catch (err) {
         console.error(`[SCHEDULER] Follow-up failed ${lead.phone_number}:`, err.message);
+        // Stamp last_interaction so this lead doesn't re-queue on the very next run.
+        // followup_count is intentionally not incremented — the attempt didn't reach the user.
+        await supabase
+          .from('leads')
+          .update({ last_interaction: new Date().toISOString() })
+          .eq('phone_number', lead.phone_number)
+          .catch(() => {});
       }
     }
 
