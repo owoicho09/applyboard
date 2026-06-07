@@ -1254,25 +1254,29 @@ const openLead = async (id) => {
         </div>
       </div>
 
-      ${(l.lead_score || l.profile_completion_score || l.motivation || l.urgency || l.passport_status || l.work_experience) ? `
       <div style="margin-top:16px">
         <div class="divider">Consultation Profile</div>
         <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px">
-          ${l.lead_score ? `<span style="font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;${l.lead_score==='hot'?'background:#fef2f2;color:#dc2626':l.lead_score==='warm'?'background:#fffbeb;color:#d97706':'background:#f0f9ff;color:#0284c7'}">${l.lead_score==='hot'?'🔥 HOT':l.lead_score==='warm'?'🌡 WARM':'❄️ COLD'}</span>` : ''}
+          ${l.lead_score ? `<span style="font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;${l.lead_score==='hot'?'background:#fef2f2;color:#dc2626':l.lead_score==='warm'?'background:#fffbeb;color:#d97706':'background:#f0f9ff;color:#0284c7'}">${l.lead_score==='hot'?'🔥 HOT':l.lead_score==='warm'?'🌡 WARM':'❄️ COLD'}</span>` : '<span style="font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;background:#f0f9ff;color:#0284c7">❄️ COLD</span>'}
           <div style="flex:1">
             <div style="font-size:11px;color:var(--text-3);margin-bottom:3px">Profile ${l.profile_completion_score||0}% complete</div>
             <div style="background:var(--border);border-radius:4px;height:6px"><div style="background:var(--primary);width:${Math.min(l.profile_completion_score||0,100)}%;height:6px;border-radius:4px"></div></div>
           </div>
         </div>
+        <div class="detail-grid" style="margin-bottom:12px">
+          <div class="detail-item" style="grid-column:1/-1"><label>Motivation</label><span style="${!l.motivation?'color:var(--text-3);font-style:italic':''}">${l.motivation?(l.motivation.slice(0,120)+(l.motivation.length>120?'…':'')):'Pending'}</span></div>
+          <div class="detail-item"><label>Destination</label><span style="${!(l.destination_country||l.destination)?'color:var(--text-3);font-style:italic':''}">${l.destination_country||l.destination||'Pending'}</span></div>
+          <div class="detail-item"><label>Service</label><span style="${!l.service_interested?'color:var(--text-3);font-style:italic':''}">${l.service_interested||'Pending'}</span></div>
+          <div class="detail-item"><label>Program</label><span style="${!l.program_level?'color:var(--text-3);font-style:italic':''}">${l.program_level||'Pending'}</span></div>
+          <div class="detail-item"><label>Timeline</label><span style="${!l.urgency?'color:var(--text-3);font-style:italic':''}">${l.urgency||'Pending'}</span></div>
+          <div class="detail-item"><label>Age</label><span style="${!l.age?'color:var(--text-3);font-style:italic':''}">${l.age||'Pending'}</span></div>
+          <div class="detail-item"><label>Budget</label><span style="${!(l.budget_range||l.budget)?'color:var(--text-3);font-style:italic':''}">${l.budget_range||l.budget||'Pending'}</span></div>
+          <div class="detail-item"><label>Passport</label><span style="${!l.passport_status?'color:var(--text-3);font-style:italic':''}">${l.passport_status||'Pending'}</span></div>
+          <div class="detail-item"><label>Work Exp</label><span style="${!l.work_experience?'color:var(--text-3);font-style:italic':''}">${l.work_experience||'Pending'}</span></div>
+        </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;padding:10px;background:var(--surface-2);border-radius:var(--radius)">
           <span style="font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;align-self:center;margin-right:2px">Docs:</span>
           ${['passport','degree','transcript','cv'].map(doc=>`<span style="font-size:12px">${(l.documents_checklist||{})[doc]?'✅':'❌'} ${doc.charAt(0).toUpperCase()+doc.slice(1)}</span>`).join('')}
-        </div>
-        <div class="detail-grid" style="margin-bottom:12px">
-          ${l.motivation?`<div class="detail-item" style="grid-column:1/-1"><label>Motivation</label><span>${l.motivation.slice(0,120)}${l.motivation.length>120?'…':''}</span></div>`:''}
-          ${l.urgency?`<div class="detail-item"><label>Urgency</label><span>${l.urgency}</span></div>`:''}
-          ${l.passport_status?`<div class="detail-item"><label>Passport</label><span>${l.passport_status}</span></div>`:''}
-          ${l.work_experience?`<div class="detail-item"><label>Work Exp</label><span>${l.work_experience}</span></div>`:''}
         </div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
           <span style="font-size:12px;font-weight:600;color:var(--text-3)">Consultant Brief</span>
@@ -1281,7 +1285,7 @@ const openLead = async (id) => {
         <div id="brief-${l.id}" style="font-size:12px;color:var(--text-2);background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:10px;min-height:58px;line-height:1.6;white-space:pre-wrap">
           <span style="color:var(--text-3)">Click Generate to create an AI-written handover brief for this lead.</span>
         </div>
-      </div>` : ''}
+      </div>
     `;
     // Load activity log
     loadActivity(l.id);

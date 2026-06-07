@@ -1,0 +1,25 @@
+Read prompts.js, textHandler.js, profileConsultation.js, and leadScorer.js before touching anything.
+
+Two fixes needed based on live production conversations today.
+
+FIRST — The registration ask and summary are not firing. The bot collects profile data correctly but never converts. When enough data is collected the bot should transition naturally — not rigidly — into summary and registration. Here is exactly how it should feel:
+
+The bot reads back what it heard naturally in one conversational message. Something like "Just to be clear — you're looking at an MSc in public health or environmental science in Ireland, January intake, biology education background, loan to cover costs. Is that right?"
+
+User confirms or corrects.
+
+Then and only then the bot introduces the next step naturally. Something like "Based on what you've shared your profile will go directly to one of our specialists who already has your full picture. To get that moving there's a one-time ₦10,000 registration fee — this covers matching you with the right person, a full case review, and scheduling your strategy session with them. Want to go ahead?"
+
+If the user asks follow up questions — what does the fee cover, is it refundable, what happens after — answer naturally and come back to the ask.
+
+Only after the user explicitly confirms they want to pay should the payment link be sent. Not when they say maybe. Not when they ask about price. Only when they say yes or equivalent.
+
+If the user says not yet or I'll think about it — "No problem at all. I'll be here when you're ready." Do not ask again that session.
+
+The threshold for triggering the summary is: destination or service confirmed AND program or goal clear AND at least two of these collected — timeline, budget, age, qualification, motivation. When that threshold is met on the next natural pause in conversation Ade moves into summary mode.
+
+SECOND — Fix the profile completion score in leadScorer.js. Currently it only counts documents. It should count all collected profile fields — destination, service interested, program level, timeline, age, motivation, urgency, budget, name. Each field is worth points. Documents are additional points on top. A lead who has shared destination, program, timeline, age, and motivation but no documents should show at least 50% not 20%.
+
+Also update the CRM profile card in dashboard.html to show the actual profile fields collected for each lead — motivation, urgency, destination, program level, timeline, age, budget, passport status — displayed cleanly alongside the document checklist. Each field should show its value if collected or show as pending if not. Make it interactive so the team can see at a glance exactly what is known about this lead without opening the conversation.
+
+Tell me your plan for each change before touching anything.

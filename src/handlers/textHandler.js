@@ -43,6 +43,16 @@ const stripWhatsAppMarkdown = (text) => text
   .replace(/^#{1,6}\s+/gm, '')      // # headers at line start
   .replace(/^[*\-]\s+/gm, '');      // bullet starters (* or -)
 
+const checkThreshold = (data) => {
+  const hasDirection = !!(data.destination_country || data.destination || data.service_interested);
+  const hasGoal      = !!(data.program_level || data.service_interested);
+  const personalDetails = [
+    data.motivation, data.budget_range || data.budget,
+    data.age, data.work_experience, data.passport_status, data.fears,
+  ].filter(Boolean).length;
+  return hasDirection && hasGoal && personalDetails >= 2;
+};
+
 const buildAgendaNote = (data) => {
   const have = [];
   const need = [];
@@ -65,22 +75,25 @@ const buildAgendaNote = (data) => {
     else need.push(k);
   }
 
-  // Threshold: destination/service + program/goal + ≥2 personal details
-  const hasDirection = !!(data.destination_country || data.destination || data.service_interested);
-  const hasGoal      = !!(data.program_level || data.urgency);
-  const personalDetails = [
-    data.motivation, data.budget_range || data.budget,
-    data.age, data.work_experience, data.passport_status, data.fears,
-  ].filter(Boolean).length;
-  const thresholdMet = hasDirection && hasGoal && personalDetails >= 2;
+  const thresholdMet = checkThreshold(data);
 
-  if (thresholdMet) {
+  // Mode: SUMMARY — threshold met, read-back not yet sent
+  if (thresholdMet && !data.summaryShown) {
     return `[AGENDA STATUS — internal only, do not narrate to the user]
 Collected: ${have.join(' | ')}
 
-You have enough of a picture. Read back what you have heard naturally in 2–3 sentences of conversational prose — not a bullet list, not a summary header, just like a real consultant quickly catching a colleague up. Then give one personalised insight about their specific situation. Then introduce the ₦10,000 registration as the obvious next step.`;
+You have enough of a picture. If this message contains a question, answer it briefly first. Then read back what you heard in one natural sentence — specific to what this person actually shared. Something like: "Just to be clear — you're looking at [destination or service], [program or goal], [a key personal detail]. Is that right?" Stop there. Do NOT mention the ₦10,000 fee in this message. Wait for them to respond.`;
   }
 
+  // Mode: REGISTRATION — summary already sent, now introduce the next step
+  if (thresholdMet && data.summaryShown) {
+    return `[AGENDA STATUS — internal only, do not narrate to the user]
+Collected: ${have.join(' | ')}
+
+You already read back their profile. Now introduce the next step naturally. Something like: "Based on what you have shared, your profile goes directly to one of our specialists who already has your full picture. To get that moving there is a one-time ₦10,000 registration fee — this covers matching you with the right person, a full case review, and scheduling your strategy session with them. Want to go ahead?" Answer any follow-up questions they have. Only trigger [[SEND_PAYMENT_LINK]] when they explicitly confirm they want to pay — not when they ask about price, not when they say maybe. If they say not yet → "No problem at all. I will be here when you are ready." Do not ask again that session.`;
+  }
+
+  // Mode: COLLECTING — still gathering information
   return `[AGENDA STATUS — internal only, do not narrate to the user]
 Collected: ${have.length ? have.join(' | ') : 'nothing yet'}
 Still needed: ${need.join(', ')}
@@ -339,8 +352,16 @@ When user clearly confirms they want to pay, OR right after answering a trust ob
       extractProfileSignals(from, clean, state),
     ]);
     const freshState = await getState(from);
-    const agendaNote = buildAgendaNote(freshState.data || {});
+    const freshData  = freshState.data || {};
+    const agendaNote = buildAgendaNote(freshData);
+    const wasSummaryTurn = checkThreshold(freshData) && !freshData.summaryShown;
     const aiReply    = await askAI(from, clean, freshState, agendaNote);
+
+    // Mark summary as shown so next turn moves to registration mode
+    if (wasSummaryTurn) {
+      const { updateData } = require('../utils/stateManager');
+      await updateData(from, { summaryShown: true });
+    }
 
     const tagPresent = aiReply.includes('[[SEND_PAYMENT_LINK]]');
 

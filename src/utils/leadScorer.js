@@ -13,18 +13,27 @@ const parseBudgetNaira = (budgetStr) => {
 
 // Returns { lead_score: 'hot'|'warm'|'cold', completion: 0-100 }
 const computeLeadScore = (data) => {
-  const PROFILE_FIELDS = [
-    'motivation', 'urgency', 'name', 'age', 'program_level',
-    'destination_country', 'passport_status', 'work_experience', 'budget_range',
-  ];
   const DOC_KEYS = ['passport', 'degree', 'transcript', 'cv'];
+  const TOTAL_FIELDS = 10;
 
-  const filledFields = PROFILE_FIELDS.filter(f => data[f]).length;
-  const docs         = data.documents_checklist || {};
-  const filledDocs   = DOC_KEYS.filter(d => docs[d]).length;
+  const filledFields = [
+    data.name,
+    data.motivation,
+    data.destination_country || data.destination,
+    data.service_interested,
+    data.program_level,
+    data.urgency,
+    data.age,
+    data.budget_range || data.budget,
+    data.work_experience,
+    data.passport_status,
+  ].filter(Boolean).length;
+
+  const docs       = data.documents_checklist || {};
+  const filledDocs = DOC_KEYS.filter(d => docs[d]).length;
 
   const completion = Math.round(
-    (filledFields / PROFILE_FIELDS.length) * 89 + (filledDocs / DOC_KEYS.length) * 11
+    (filledFields / TOTAL_FIELDS) * 90 + (filledDocs / DOC_KEYS.length) * 10
   );
 
   const urgencyHot  = /asap|immediately|urgent|right now|few months|this year/.test(
