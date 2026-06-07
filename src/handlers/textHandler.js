@@ -43,6 +43,51 @@ const stripWhatsAppMarkdown = (text) => text
   .replace(/^#{1,6}\s+/gm, '')      // # headers at line start
   .replace(/^[*\-]\s+/gm, '');      // bullet starters (* or -)
 
+const buildAgendaNote = (data) => {
+  const have = [];
+  const need = [];
+
+  const fields = {
+    motivation:     data.motivation,
+    destination:    data.destination_country || data.destination,
+    service:        data.service_interested,
+    program:        data.program_level,
+    urgency:        data.urgency,
+    budget:         data.budget_range || data.budget,
+    age:            data.age,
+    qualifications: data.work_experience,
+    passport:       data.passport_status,
+    fears:          data.fears,
+  };
+
+  for (const [k, v] of Object.entries(fields)) {
+    if (v) have.push(`${k}: ${v}`);
+    else need.push(k);
+  }
+
+  // Threshold: destination/service + program/goal + ≥2 personal details
+  const hasDirection = !!(data.destination_country || data.destination || data.service_interested);
+  const hasGoal      = !!(data.program_level || data.urgency);
+  const personalDetails = [
+    data.motivation, data.budget_range || data.budget,
+    data.age, data.work_experience, data.passport_status, data.fears,
+  ].filter(Boolean).length;
+  const thresholdMet = hasDirection && hasGoal && personalDetails >= 2;
+
+  if (thresholdMet) {
+    return `[AGENDA STATUS — internal only, do not narrate to the user]
+Collected: ${have.join(' | ')}
+
+You have enough of a picture. Read back what you have heard naturally in 2–3 sentences of conversational prose — not a bullet list, not a summary header, just like a real consultant quickly catching a colleague up. Then give one personalised insight about their specific situation. Then introduce the ₦10,000 registration as the obvious next step.`;
+  }
+
+  return `[AGENDA STATUS — internal only, do not narrate to the user]
+Collected: ${have.length ? have.join(' | ') : 'nothing yet'}
+Still needed: ${need.join(', ')}
+
+Work missing fields into the conversation naturally, one at a time, only when the moment fits. Never run through them as a checklist. Answer any question they ask first, then come back.`;
+};
+
 const getPaymentAmount = (state) => {
   const { REGISTRATION_FEE } = require('../config/constants');
 
@@ -139,20 +184,32 @@ const handleText = async (from, text, state, message) => {
       if (lead.notes)               restored.notes              = lead.notes;
 
       await setState(from, STAGES.FREE_TEXT_AI, restored);
-      const freshState = await getState(from);
+      const freshState   = await getState(from);
+      const agendaNote   = buildAgendaNote(freshState.data || {});
 
       const { askAI } = require('../services/ai');
       const aiReply   = await askAI(
         from, clean, freshState,
-        `This user is returning after a gap — their session expired but they are a known contact. Their profile is already loaded in context. Do NOT re-introduce yourself or say "welcome". Pick up naturally — one warm sentence acknowledging you remember them, then one question that continues where you left off. Profile: ${lead.name ? `name: ${lead.name}` : ''}${lead.destination_country ? `, destination: ${lead.destination_country}` : ''}${lead.service_interested ? `, service: ${lead.service_interested}` : ''}.`
+        `This user is returning after a gap — their session expired but they are a known contact. Their profile is already loaded in context. Do NOT re-introduce yourself or say "welcome". Pick up naturally — one warm sentence acknowledging you remember them, then one question that continues where you left off.\n\n${agendaNote}`
       );
       return sendText(from, aiReply);
     }
 
-    // Genuine new user
-    const { sendGreeting } = require('../flows/greeting');
+    // Genuine new user — AI reads their first message and responds to it specifically
     await setState(from, STAGES.FREE_TEXT_AI);
-    return sendGreeting(from, state.data?.name);
+    const newState = await getState(from);
+
+    // Fire signal extraction in background — don't block the greeting
+    const { extractProfileSignals } = require('../utils/profileExtractor');
+    Promise.all([
+      detectAndSaveSignals(from, lower, newState),
+      extractProfileSignals(from, clean, newState),
+    ]).catch(() => {});
+
+    const { askAI } = require('../services/ai');
+    const greetingNote = `This is a brand new user — their very first message. Read exactly what they said and respond to it specifically — show you heard what they actually want. Then ask the one question that takes it one layer deeper into their situation. Two sentences maximum. No welcome speech. No list of services. No "how can I help you today".`;
+    const greeting = await askAI(from, clean, newState, greetingNote);
+    return sendText(from, greeting);
   }
 
   // ── 5. Payment awaiting ───────────────────────────────
@@ -274,14 +331,16 @@ When user clearly confirms they want to pay, OR right after answering a trust ob
   }
   try {
     const { askAI } = require('../services/ai');
-
-    // Signal detection writes to DB/Redis — run both extractors in parallel with the AI call
     const { extractProfileSignals } = require('../utils/profileExtractor');
-    const [, , aiReply] = await Promise.all([
+
+    // Extract signals first so the agenda note reflects this turn's data
+    await Promise.all([
       detectAndSaveSignals(from, lower, state),
       extractProfileSignals(from, clean, state),
-      askAI(from, clean, state),
     ]);
+    const freshState = await getState(from);
+    const agendaNote = buildAgendaNote(freshState.data || {});
+    const aiReply    = await askAI(from, clean, freshState, agendaNote);
 
     const tagPresent = aiReply.includes('[[SEND_PAYMENT_LINK]]');
 
@@ -299,8 +358,7 @@ When user clearly confirms they want to pay, OR right after answering a trust ob
     if (cleanReply) await sendText(from, cleanReply);
 
     if (shouldSendLink) {
-      const freshState = await getState(from);
-      const d          = freshState.data || {};
+      const d = freshState.data || {};
       const hasContext = !!(d.name || d.destination || d.service_interested || d.destination_country);
 
       if (!hasContext) {
@@ -320,7 +378,7 @@ When user clearly confirms they want to pay, OR right after answering a trust ob
       } else {
         console.log(`[PAYMENT TRIGGER] AI flagged payment — generating link tag=${tagPresent} narration=${aiNarratedLink}`);
         const { handlePayment } = require('../flows/payment');
-        const amount             = getPaymentAmount(state);
+        const amount             = getPaymentAmount(freshState);
         const { updateData }     = require('../utils/stateManager');
         await updateData(from, { payment_amount: amount });
         const payState = await getState(from);

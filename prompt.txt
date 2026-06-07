@@ -1,36 +1,44 @@
-I need you to investigate and fix a set of production bugs in this WhatsApp bot codebase. Do not jump to solutions immediately — first read the architecture thoroughly, understand how data flows, then devise your own fixes.
+Read everything before touching anything — textHandler.js, greeting.js, ai.js, prompts.js, profileConsultation.js, profileExtractor.js, and SYSTEM_FLOW.md.
 
----
+I need you to understand what we are trying to achieve before you think about code.
 
-CONTEXT:
+Right now the bot has two separate things — FREE_TEXT_AI which is flexible and natural but has no agenda, and PROFILE_COLLECTING which is a separate stage that nobody reaches because it only activates through a consultation button.
 
-This is a Node.js WhatsApp bot for ApplyBoard Africa — an immigration and study-abroad consultancy. It uses Meta WhatsApp Cloud API, Redis for conversation state, Supabase for lead data, Paystack for payments, and Claude AI for free-text conversation handling.
+We need to merge these into one experience.
 
-The bot is in production with real users actively using it daily. These bugs are killing conversions.
+Ade should always be having a natural human conversation. But Ade now has a quiet agenda. He knows what he needs to learn about every person and he works it in naturally over the course of the conversation — not as a form, not as a checklist, not in order, just at the right moment when it fits.
 
----
+What Ade needs to learn about every person:
+- Why they want to make the move
+- Where they want to go
+- What they want to do there — study, work, relocate
+- Their program or level
+- Their timeline and urgency
+- Their budget reality
+- Their age
+- Their qualification background
+- Their passport status
+- Their document situation
+- Their biggest fear or blocker
 
-OBSERVED PROBLEMS IN PRODUCTION:
+Ade collects these naturally over the conversation. When someone shares something Ade notes it and moves forward. When something is missing Ade finds the right moment to ask. When the person asks a question mid-conversation Ade answers it and comes back to what he needs.
 
-PROBLEM 1 — PAYMENT LINK SENT MULTIPLE TIMES IN ONE CONVERSATION
-In a real conversation today, a user said "yes am ready" to pay once. The bot sent the payment link 6 separate times across the conversation — every time the user sent another message asking about the office address or loans, a new payment link was generated and sent. The user received 6 different Paystack checkout URLs in one session. This is the most urgent problem.
+When Ade has enough of a picture — destination or service confirmed, program or goal clear, at least two personal details collected — he reads back what he heard naturally like a real consultant and gives one personalised insight about their specific situation. Then introduces the ₦10,000 registration as the obvious next step.
 
-PROBLEM 2 — COMPANY ADDRESS NOT BEING GIVEN ACCURATELY
-When a user asks "what is your office address" or "where are you located", the bot responds with vague answers like "we're based in Lagos, Nigeria" instead of the actual street address. The full address exists in the codebase in constants.js inside a COMPANY object. The bot is not using it — it appears to be guessing from general knowledge instead.
+For new users — Ade opens with one warm question that makes them feel understood. Not a menu. Not a welcome speech.
 
-PROBLEM 3 — PROMPT DRIFT UNDER PRODUCTION LOAD
-The system has been patched multiple times via AI prompt adjustments to fix conversation behavior. Each patch fixes one thing but breaks or weakens something else. The AI is currently acting as both the conversationalist and the control plane — it decides when to push for payment, what company info to give, and how to handle trust objections. There are no code-level guardrails catching bad AI decisions. This is not sustainable as conversation volume grows.
+For returning users with existing profile data — Ade already knows their situation. He picks up naturally without asking things he already knows.
 
----
+For returning users with no data — Ade starts fresh but naturally.
 
-YOUR TASK:
+The profile consultation stages PROFILE_COLLECTING, PROFILE_SUMMARY, PROFILE_ROADMAP are not separate rigid stages anymore. They are the natural progression of every conversation. The signal extractor still runs in the background saving everything to CRM silently.
 
-1. Read the full codebase — specifically how messages flow from webhook to response, how Redis state is managed, how the AI is called, how payment links are generated and triggered, and how COMPANY constants are used (or not used) across the system.
+The FREE_TEXT_AI stage should effectively become guided FREE_TEXT_AI — same flexibility, same natural feel, but now with purpose and agenda behind it.
 
-2. Identify the exact root cause of each problem above from the code itself — not from assumptions.
+What needs to change:
+1. The greeting — new users should not get a generic welcome that dumps them in FREE_TEXT_AI with no direction. Ade should open with one warm purposeful question.
+2. The system prompt guidance — Ade needs clear instruction that he has an agenda, what that agenda is, and how to work it naturally into conversation without it feeling like an interview
+3. The profile signals — extractProfileSignals should run on every message in FREE_TEXT_AI just like it does in PROFILE_COLLECTING so data is always being collected regardless of stage
+4. The summary and roadmap — when enough data is collected the AI should naturally transition into summary and roadmap mode without needing a separate stage trigger
 
-3. Devise and implement fixes that solve these problems at the right layer. Some of these may be prompt issues, some may be state management issues, some may be architectural gaps. You decide after reading the code.
-
-4. Do not over-engineer. Do not rewrite what is working. Fix what is broken at the lowest intervention point that makes the fix durable.
-
-After reading, tell me what you found before you change anything.
+Tell me your complete plan for how to make this work before touching anything. The goal is one seamless experience — natural, human, guided, purposeful.

@@ -11,7 +11,8 @@
       "Bash(git commit *)",
       "Bash(node *)",
       "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\HP\\\\Desktop\\\\Projects\\\\applyboard-bot\" -Recurse)",
-      "Bash(Select-Object FullName)"
+      "Bash(Select-Object FullName)",
+      "Bash(curl -s http://localhost:3000/health)"
     ]
   }
 }
