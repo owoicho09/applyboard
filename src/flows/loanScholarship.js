@@ -1,7 +1,8 @@
 const { sendButtons, sendText } = require('../services/messenger');
 const { setState, updateData }  = require('../utils/stateManager');
 const { updateLead }            = require('../services/leadService');
-const { STAGES, BTN }           = require('../config/constants');
+const { STAGES }                = require('../config/stages');
+const { BTN }                   = require('../config/buttons');
 const { formatLoanMessage }     = require('../data/loanPackages');
 
 const handleLoan = async (from, action, state) => {

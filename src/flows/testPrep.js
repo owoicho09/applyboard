@@ -1,7 +1,8 @@
 const { sendButtons, sendList, sendText } = require('../services/messenger');
 const { setState, updateData }            = require('../utils/stateManager');
 const { updateLead }                      = require('../services/leadService');
-const { STAGES, BTN }                     = require('../config/constants');
+const { STAGES }                          = require('../config/stages');
+const { BTN }                             = require('../config/buttons');
 const { getBatch }                        = require('../data/batches');
 const { startConsultation }               = require('./consultation');
 
@@ -16,6 +17,14 @@ const EXAM_MAP = {
   [BTN.TP_GERMAN]:   'GERMAN',
   [BTN.TP_FRENCH]:   'FRENCH',
   [BTN.TP_JAPANESE]: 'JAPANESE',
+};
+
+const BATCH_LABELS = {
+  [BTN.BATCH_MORNING]:   'Morning Batch',
+  [BTN.BATCH_EVENING]:   'Evening Batch',
+  [BTN.BATCH_WEEKEND]:   'Weekend Batch',
+  [BTN.BATCH_INTENSIVE]: 'Intensive Batch',
+  [BTN.BATCH_ONLINE]:    'Online (Self-paced)',
 };
 
 const handleTestPrep = async (from, action, state) => {
@@ -95,14 +104,6 @@ const handleTestPrep = async (from, action, state) => {
   }
 
   // ── Step 3: Batch selected → register ────────────────
-  const BATCH_LABELS = {
-    [BTN.BATCH_MORNING]:   'Morning Batch',
-    [BTN.BATCH_EVENING]:   'Evening Batch',
-    [BTN.BATCH_WEEKEND]:   'Weekend Batch',
-    [BTN.BATCH_INTENSIVE]: 'Intensive Batch',
-    [BTN.BATCH_ONLINE]:    'Online (Self-paced)',
-  };
-
   if (BATCH_LABELS[action]) {
   const batchLabel = BATCH_LABELS[action];
   const exam       = state.data?.exam || 'Test Prep';
@@ -112,7 +113,7 @@ const handleTestPrep = async (from, action, state) => {
   await updateData(from, {
     batch:          batchLabel,
     service:        `Test Prep — ${exam}`,
-    payment_amount: batch ? parseInt(batch.fee.replace(/[^0-9]/g, '')) : 85000,
+    payment_amount: batch?.feeNaira ?? 85000,
   });
   await updateLead(from, {
     conversation_stage: 'qualified',

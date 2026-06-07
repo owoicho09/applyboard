@@ -3,7 +3,7 @@ const { getState }               = require('../utils/stateManager');
 const { isRateLimited }          = require('../middleware/rateLimiter');
 const { isMessageSeen }          = require('../utils/stateManager');
 const { upsertLead, logMessage } = require('../services/leadService');
-const { MESSAGES }               = require('../config/constants');
+const { MESSAGES }               = require('../config/messages');
 const { sendText }               = require('../services/whatsapp');
 
 const handleIncoming = async (entry) => {

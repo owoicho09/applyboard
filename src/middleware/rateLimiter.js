@@ -1,5 +1,5 @@
 const redis                      = require('../config/redis');
-const { REDIS_KEYS, TTL, RATE }  = require('../config/constants');
+const { REDIS_KEYS, TTL, RATE }  = require('../config/redis');
 
 /**
  * Returns true if this phone number has exceeded the rate limit.

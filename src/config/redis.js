@@ -25,4 +25,23 @@ redis.on('error',    (err) => console.error('[REDIS] Error:', err.message));
 redis.on('close',    () => console.warn('[REDIS] Connection closed'));
 redis.on('reconnecting', () => console.warn('[REDIS] Reconnecting...'));
 
+const REDIS_KEYS = {
+  state:     (phone) => `state:${phone}`,
+  rateLimit: (phone) => `rl:${phone}`,
+  msgSeen:   (msgId) => `seen:${msgId}`,
+};
+
+const TTL = {
+  STATE:      60 * 60 * 24, // 24 hours
+  RATE_LIMIT: 60,
+  MSG_DEDUP:  60,
+};
+
+const RATE = {
+  MAX_MESSAGES_PER_MINUTE: 30,
+};
+
 module.exports = redis;
+module.exports.REDIS_KEYS = REDIS_KEYS;
+module.exports.TTL = TTL;
+module.exports.RATE = RATE;

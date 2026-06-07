@@ -1,7 +1,8 @@
 const { sendButtons, sendList, sendText } = require('../services/messenger');
 const { setState, updateData }            = require('../utils/stateManager');
 const { updateLead }                      = require('../services/leadService');
-const { STAGES, BTN }                     = require('../config/constants');
+const { STAGES }                          = require('../config/stages');
+const { BTN }                             = require('../config/buttons');
 
 const DESTINATIONS = {
   [BTN.SA_CANADA]:  'Canada',

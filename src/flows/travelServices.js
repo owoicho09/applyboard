@@ -1,7 +1,8 @@
 const { sendButtons, sendText } = require('../services/messenger');
 const { setState, updateData }  = require('../utils/stateManager');
 const { updateLead }            = require('../services/leadService');
-const { STAGES, BTN }           = require('../config/constants');
+const { STAGES }                = require('../config/stages');
+const { BTN }                   = require('../config/buttons');
 const { startConsultation }     = require('./consultation');
 
 const handleTravel = async (from, action, state) => {
@@ -21,8 +22,8 @@ const handleTravel = async (from, action, state) => {
     );
   }
 
-  if (action === BTN.TV_FLIGHTS || action === 'INSURANCE') {
-    const isInsurance = action === BTN.TV_INSURANCE || action === 'INSURANCE';
+  if (action === BTN.TV_FLIGHTS || action === BTN.TV_INSURANCE) {
+    const isInsurance = action === BTN.TV_INSURANCE;
     const service     = isInsurance ? 'Travel Insurance' : 'Flight Tickets';
 
     await updateData(from, { service, travel_type: service });

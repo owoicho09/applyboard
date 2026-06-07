@@ -1,5 +1,58 @@
 const supabase = require('../config/database');
 
+const buildHistory = async (phone, state) => {
+  const history = state.data?.chatHistory || [];
+  if (history.length > 0) return history.slice(-16);
+
+  // Redis expired — seed from Supabase conversations table so the AI isn't flying blind
+  try {
+    const { data } = await supabase
+      .from('conversations')
+      .select('direction, content')
+      .eq('phone_number', phone)
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    if (!data?.length) return [];
+    return data
+      .reverse()
+      .map(row => ({
+        role:    row.direction === 'inbound' ? 'user' : 'assistant',
+        content: row.content || '',
+      }))
+      .filter(m => m.content);
+  } catch {
+    return [];
+  }
+};
+
+const loadPersistentContext = async (phone) => {
+  try {
+    const lead = await getLead(phone);
+    if (!lead) return '';
+
+    const parts = [];
+    if (lead.name) {
+      // Use only the first word — avoids passing full handles or "FirstName LastName" the AI parrots awkwardly
+      const firstName = lead.name.trim().split(/\s+/)[0];
+      if (firstName) parts.push(`Name (use at most once, naturally — skip entirely if it looks like a username or handle): ${firstName}`);
+    }
+    if (lead.destination_country) parts.push(`Destination: ${lead.destination_country}`);
+    if (lead.service_interested)  parts.push(`Service: ${lead.service_interested}`);
+    if (lead.program_level)       parts.push(`Program: ${lead.program_level}`);
+    if (lead.timeline)            parts.push(`Timeline: ${lead.timeline}`);
+    if (lead.loan_interest)       parts.push(`Interested in loans`);
+    if (lead.payment_status === 'paid') parts.push(`Already paid registration — focus on next steps, not payment`);
+    if (lead.notes)               parts.push(`Notes: ${lead.notes}`);
+
+    return parts.length > 0
+      ? `\n\n[Known context: ${parts.join(' | ')}]`
+      : '';
+  } catch {
+    return '';
+  }
+};
+
 const upsertLead = async (phone, data = {}) => {
   try {
     const { data: existing } = await supabase
@@ -85,4 +138,4 @@ const logMessage = async (phone, direction, type, content, waId = null) => {
   }
 };
 
-module.exports = { upsertLead, updateLead, getLead, logMessage };
+module.exports = { upsertLead, updateLead, getLead, logMessage, buildHistory, loadPersistentContext };

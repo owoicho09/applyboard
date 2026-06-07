@@ -1,5 +1,6 @@
 const redis           = require('../config/redis');
-const { STAGES, REDIS_KEYS, TTL } = require('../config/constants');
+const { STAGES }                  = require('../config/stages');
+const { REDIS_KEYS, TTL }         = require('../config/redis');
 
 /**
  * Get conversation state for a phone number.
@@ -97,4 +98,22 @@ const releaseLock = async (phone) => {
   } catch {}
 };
 
-module.exports = { getState, setState, updateData, clearState, isMessageSeen, tryLock, releaseLock };
+// Appends a user/assistant exchange to chatHistory in Redis.
+// Re-fetches fresh state first so it captures whatever stage a flow set this turn,
+// not the stale snapshot from before the flow ran.
+const saveToHistory = async (phone, state, userMsg, botReply) => {
+  try {
+    const freshState    = await getState(phone);
+    const currentStage  = freshState?.stage ?? state.stage;
+    const history       = freshState?.data?.chatHistory || state.data?.chatHistory || [];
+
+    history.push({ role: 'user',      content: userMsg  });
+    history.push({ role: 'assistant', content: botReply });
+
+    await setState(phone, currentStage, { chatHistory: history.slice(-16) });
+  } catch (err) {
+    console.error('[STATE] saveToHistory error:', err.message);
+  }
+};
+
+module.exports = { getState, setState, updateData, clearState, isMessageSeen, tryLock, releaseLock, saveToHistory };

@@ -1,6 +1,7 @@
 const { sendText }   = require('../services/messenger');
 const { setState }   = require('../utils/stateManager');
-const { STAGES, MESSAGES } = require('../config/constants');
+const { STAGES }           = require('../config/stages');
+const { MESSAGES }         = require('../config/messages');
 const { getFirstName }     = require('../utils/helpers');
 
 const sendGreeting = async (from, name = '') => {

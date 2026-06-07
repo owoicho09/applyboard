@@ -1,7 +1,10 @@
 const { sendText }           = require('../services/messenger');
 const { setState, getState } = require('../utils/stateManager');
 const { updateLead }         = require('../services/leadService');
-const { MESSAGES, STAGES, BTN, REGISTRATION_FEE, COMPANY } = require('../config/constants');
+const { REGISTRATION_FEE, COMPANY }  = require('../config/constants');
+const { MESSAGES }                   = require('../config/messages');
+const { STAGES }                     = require('../config/stages');
+const { BTN }                        = require('../config/buttons');
 const { formatCurrency }     = require('../utils/helpers');
 const supabase               = require('../config/database');
 

@@ -1,6 +1,8 @@
 const { sendList }              = require('../services/messenger');
 const { setState }              = require('../utils/stateManager');
-const { STAGES, MESSAGES, BTN } = require('../config/constants');
+const { STAGES }                = require('../config/stages');
+const { MESSAGES }              = require('../config/messages');
+const { BTN }                   = require('../config/buttons');
 
 const sendMainMenu = async (from) => {
   await setState(from, STAGES.MAIN_MENU);

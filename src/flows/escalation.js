@@ -1,7 +1,7 @@
 const { sendText }              = require('../services/messenger');
 const { setState }              = require('../utils/stateManager');
 const { updateLead }            = require('../services/leadService');
-const { STAGES }                = require('../config/constants');
+const { STAGES }                = require('../config/stages');
 const { notifyStaff, notifyAgent } = require('../services/notificationService');
 
 const escalate = async (from, state) => {

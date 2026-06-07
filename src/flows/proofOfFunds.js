@@ -1,7 +1,8 @@
 const { sendButtons, sendText } = require('../services/messenger');
 const { setState }              = require('../utils/stateManager');
 const { updateLead }            = require('../services/leadService');
-const { STAGES, BTN }           = require('../config/constants');
+const { STAGES }                = require('../config/stages');
+const { BTN }                   = require('../config/buttons');
 const { startConsultation }     = require('./consultation');
 
 const handlePoF = async (from, action, state) => {

@@ -249,6 +249,50 @@ router.get('/api/leads/:id', async (req, res) => {
   }
 });
 
+// Generate AI consultant brief for a lead
+router.get('/api/leads/:id/brief', async (req, res) => {
+  try {
+    const { data: lead, error } = await supabase
+      .from('leads').select('*').eq('id', req.params.id).single();
+    if (error) throw error;
+
+    const parts = [];
+    if (lead.name)                    parts.push(`Name: ${lead.name}`);
+    if (lead.phone_number)            parts.push(`Phone: ${lead.phone_number}`);
+    if (lead.destination_country)     parts.push(`Destination: ${lead.destination_country}`);
+    if (lead.service_interested)      parts.push(`Service: ${lead.service_interested}`);
+    if (lead.program_level)           parts.push(`Program: ${lead.program_level}`);
+    if (lead.motivation)              parts.push(`Motivation: ${lead.motivation}`);
+    if (lead.urgency)                 parts.push(`Urgency: ${lead.urgency}`);
+    if (lead.passport_status)         parts.push(`Passport: ${lead.passport_status}`);
+    if (lead.work_experience)         parts.push(`Work experience: ${lead.work_experience}`);
+    if (lead.budget_range || lead.budget) parts.push(`Budget: ${lead.budget_range || lead.budget}`);
+    if (lead.age)                     parts.push(`Age: ${lead.age}`);
+    if (lead.profile_completion_score) parts.push(`Profile completion: ${lead.profile_completion_score}%`);
+    if (lead.lead_score)              parts.push(`Lead score: ${lead.lead_score}`);
+
+    const docs = lead.documents_checklist || {};
+    const docStr = ['passport', 'degree', 'transcript', 'cv']
+      .map(d => `${d}: ${docs[d] ? 'received' : 'pending'}`)
+      .join(', ');
+    parts.push(`Documents — ${docStr}`);
+
+    const profileSummary = parts.join('\n');
+    const { askAI } = require('../services/ai');
+
+    const brief = await askAI(
+      `admin_brief_${lead.id}`,
+      '[GENERATE_CONSULTANT_BRIEF]',
+      { stage: 'FREE_TEXT_AI', data: {} },
+      `You are generating a consultant handover brief for an internal team member at ApplyBoard Africa. Write it in plain English, professional but warm. Based on the profile below, write 3–4 sentences covering: who this person is, what they are trying to do, their timeline and budget reality, and the key thing the consultant should focus on in the first session. End with one line about lead quality (hot/warm/cold) and why.\n\nProfile:\n${profileSummary}`
+    );
+
+    res.json({ brief });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Update lead + log activity
 router.put('/api/leads/:id', express.json(), async (req, res) => {
   try {
@@ -371,7 +415,7 @@ router.put('/api/payments/:id/confirm', express.json(), async (req, res) => {
       // Clear payment-awaiting state so user can converse normally
       try {
         const { clearState, setState } = require('../utils/stateManager');
-        const { STAGES }               = require('../config/constants');
+        const { STAGES }               = require('../config/stages');
         await clearState(payment.phone_number);
         await setState(payment.phone_number, STAGES.FREE_TEXT_AI, {});
       } catch (e) { /* non-critical — state TTL will eventually expire */ }

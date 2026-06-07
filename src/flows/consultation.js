@@ -1,7 +1,8 @@
 const { sendText, sendButtons } = require('../services/messenger');
 const { setState }              = require('../utils/stateManager');
 const { updateLead }            = require('../services/leadService');
-const { STAGES, BTN }           = require('../config/constants');
+const { STAGES }                = require('../config/stages');
+const { BTN }                   = require('../config/buttons');
 const { sanitizeName }          = require('../utils/validators');
 
 // Called when conversion moment is detected — not a "book a call" flow
@@ -38,25 +39,4 @@ const startConsultation = async (from, state, action = null) => {
   }
 };
 
-// Called after registration payment confirmed — collect profile and route to staff
-const completeRegistration = async (from, state) => {
-  const name    = state.data?.name    || 'Client';
-  const service = state.data?.service || 'General';
-
-  await updateLead(from, {
-    consultation_booked:   true,
-    conversation_stage:    'registered',
-    consultation_datetime: new Date().toISOString(),
-  });
-
-  // Notify the right staff
-  const { notifyStaff } = require('../services/notificationService');
-  await notifyStaff(from, state);
-
-  await sendText(
-    from,
-    `You are in. Registration confirmed, ${name}.\n\nThe right person on our team will reach out to you shortly with everything you need to move forward.\n\nIn the meantime — is there anything else you want to know?`
-  );
-};
-
-module.exports = { startConsultation, completeRegistration };
+module.exports = { startConsultation };

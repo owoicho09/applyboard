@@ -18,12 +18,6 @@ const COMPANY = {
   calendly:    'https://calendly.com/applyboardafrica-info/new-meeting',
 };
 
-const BANK = {
-  bankName:    'GTBank',
-  accountName: 'ApplyBoard Africa Ltd',
-  accountNo:   'XXXXXXXXXX', // UPDATE before going live
-};
-
 // ─── REGISTRATION FEE ────────────────────────────────────────
 // Charged for Study Abroad, Visa, Loans, Travel, Pilgrimage
 // NOT charged for Test Prep — they pay class fee directly
@@ -80,6 +74,11 @@ const PRICES = {
   },
 };
 
+// ─── EXAM AMOUNTS (derived — single source of truth is PRICES.testPrep) ────
+const EXAM_AMOUNTS = Object.fromEntries(
+  Object.entries(PRICES.testPrep).map(([k, v]) => [k.toLowerCase(), v.naira])
+);
+
 // ─── STAFF MEMBERS (CRM assignment + WhatsApp notifications) ─
 const STAFF_MEMBERS = [
   { name: 'Gift',    phone: '2349061371251' },
@@ -101,21 +100,6 @@ const STAFF_ROUTING = {
   complaints:   'complaints@applyboardafrica.com',
   partnerships: 'partnerships@applyboardafrica.com',
   default:      'info@applyboardafrica.com',
-};
-
-// ─── COUNTRIES ───────────────────────────────────────────────
-const COUNTRIES = {
-  europe: [
-    'United Kingdom', 'Germany', 'France', 'Ireland', 'Netherlands',
-    'Italy', 'Spain', 'Belgium', 'Switzerland', 'Portugal', 'Austria',
-    'Sweden', 'Norway', 'Denmark', 'Finland', 'Poland', 'Czech Republic',
-  ],
-  americas: [
-    'Canada', 'USA', 'Brazil', 'Mexico', 'Argentina',
-    'Colombia', 'Chile', 'Peru', 'Costa Rica',
-  ],
-  oceania: ['Australia', 'New Zealand'],
-  asia:    ['Japan', 'South Korea', 'Singapore', 'Malaysia', 'UAE', 'Turkey'],
 };
 
 // ─── LOAN RULES ──────────────────────────────────────────────
@@ -163,188 +147,6 @@ const LOAN_RULES = {
   partners: ['Prodigy Finance', 'MPOWER', 'Passage Loan', 'ApplyBoard Financing'],
 };
 
-// ─── MESSAGES ───────────────────────────────────────────────
-const MESSAGES = {
-
-  // Natural opener — rotates to feel fresh, opens conversation
-  // No service dump, no emoji overload, no corporate intro
-  greeting: (name = '') => {
-    const n = name && name !== 'there' ? ` ${name}` : '';
-    const openers = [
-      `Hey${n}. What are you trying to figure out?`,
-      `Hey${n}, good to have you here. What's on your mind?`,
-      `Hi${n}. What brings you here today?`,
-      `Hey${n}. Are you thinking about studying abroad or relocating?`,
-      `Hey${n}. What's the plan?`,
-    ];
-    return openers[Math.floor(Math.random() * openers.length)];
-  },
-
-  fallback:
-    `Something went wrong on my end. Give me a moment and try again, or reach us directly on ${COMPANY.phone}`,
-
-  rateLimit:
-    `You are sending messages quite fast. Give me a second to catch up.`,
-
-  paystackTransfer: (url) => url
-    ? `We only process payments through Paystack — it accepts card, bank transfer, and USSD all in one place, no card required.\n\nHere is your secure link:\n\n${url}\n\nSelect "Bank Transfer" on the Paystack page and it will give you the transfer details. Confirmation comes through automatically once done.`
-    : `We only process payments through Paystack — it accepts card, bank transfer, and USSD all in one place, no card required.\n\nOnce you have your payment link, select "Bank Transfer" on the Paystack page and it handles everything from there.`,
-
-  paymentConfirmed: (amount, ref) =>
-    `Payment confirmed.\n\nAmount: ₦${Number(amount).toLocaleString('en-NG')}\nReference: ${ref}\n\nYou are in the system. Someone from our team will be in touch shortly.`,
-
-  escalation:
-    `Understood. Flagging this for a senior team member right now.\n\nThey will reach out to you directly — usually within 30 minutes during business hours.\n\nAnything else you want me to note before they call?`,
-
-  sessionExpired:
-    `Hey, welcome back.\n\nWhat are you working on today?`,
-
-  registrationPrompt: (name = '') => {
-    const n = name ? `, ${name}` : '';
-    return `Alright${n}, I have a clear picture of your situation.\n\nTo move this forward properly and get you matched with the right specialist on our team, there is a one-time registration fee of ₦10,000.\n\nThis gets you into the system and on the priority list — the team will be fully briefed on your case before they reach out.\n\nReady to proceed?`;
-  },
-};
-
-// ─── BUTTON / LIST IDs ──────────────────────────────────────
-const BTN = {
-  // Navigation
-  MENU_MAIN:    'MENU_MAIN',
-  MENU_EXPLORE: 'MENU_EXPLORE',
-  MENU_CONSULT: 'MENU_CONSULT',
-  BACK:         'BACK',
-
-  // Services
-  SVC_STUDY:   'SVC_STUDY',
-  SVC_VISA:    'SVC_VISA',
-  SVC_LOAN:    'SVC_LOAN',
-  SVC_TEST:    'SVC_TEST',
-  SVC_TRAVEL:  'SVC_TRAVEL',
-  SVC_INSURE:  'SVC_INSURE',
-  SVC_HAJJ:    'SVC_HAJJ',
-  SVC_POF:     'SVC_POF',
-  SVC_CONSULT: 'SVC_CONSULT',
-
-  // Study abroad destinations
-  SA_CANADA:  'SA_CANADA',
-  SA_UK:      'SA_UK',
-  SA_USA:     'SA_USA',
-  SA_GERMANY: 'SA_GERMANY',
-  SA_AUS:     'SA_AUS',
-  SA_IRELAND: 'SA_IRELAND',
-  SA_NZ:      'SA_NZ',
-  SA_BRAZIL:  'SA_BRAZIL',
-  SA_OTHER:   'SA_OTHER',
-
-  // Program levels
-  SL_UG:      'SL_UG',
-  SL_PG:      'SL_PG',
-  SL_DIPLOMA: 'SL_DIPLOMA',
-
-  // Timelines
-  ST_NOW:   'ST_NOW',
-  ST_MID:   'ST_MID',
-  ST_LATER: 'ST_LATER',
-
-  // Visa types
-  VT_STUDY:    'VT_STUDY',
-  VT_TOURIST:  'VT_TOURIST',
-  VT_BUSINESS: 'VT_BUSINESS',
-  VT_WORK:     'VT_WORK',
-  VT_FAMILY:   'VT_FAMILY',
-
-  // Test prep
-  TP_IELTS:    'TP_IELTS',
-  TP_TOEFL:    'TP_TOEFL',
-  TP_GRE:      'TP_GRE',
-  TP_GMAT:     'TP_GMAT',
-  TP_SAT:      'TP_SAT',
-  TP_PTE:      'TP_PTE',
-  TP_DUOLINGO: 'TP_DUOLINGO',
-  TP_GERMAN:   'TP_GERMAN',
-  TP_FRENCH:   'TP_FRENCH',
-  TP_JAPANESE: 'TP_JAPANESE',
-
-  // Batches
-  BATCH_MORNING:   'BATCH_MORNING',
-  BATCH_EVENING:   'BATCH_EVENING',
-  BATCH_WEEKEND:   'BATCH_WEEKEND',
-  BATCH_INTENSIVE: 'BATCH_INTENSIVE',
-  BATCH_ONLINE:    'BATCH_ONLINE',
-
-  // Loans
-  LOAN_EUR: 'LOAN_EUR',
-  LOAN_UK:  'LOAN_UK',
-  LOAN_CA:  'LOAN_CA',
-  LOAN_SCH: 'LOAN_SCH',
-
-  // Travel
-  TV_FLIGHTS:   'TV_FLIGHTS',
-  TV_HOTELS:    'TV_HOTELS',
-  TV_INSURANCE: 'TV_INSURANCE',
-
-  // Pilgrimage
-  PG_HAJJ:  'PG_HAJJ',
-  PG_UMRAH: 'PG_UMRAH',
-  PG_TOURS: 'PG_TOURS',
-
-  // Consultation times (kept for legacy compatibility)
-  CT_MORNING:   'CT_MORNING',
-  CT_AFTERNOON: 'CT_AFTERNOON',
-  CT_EVENING:   'CT_EVENING',
-
-  // Payment
-  PAY_NOW:     'PAY_NOW',
-  PAY_BANK:    'PAY_BANK',
-  PAY_INSTALL: 'PAY_INSTALL',
-
-  // Misc
-  ESCALATE: 'ESCALATE',
-};
-
-// ─── CONVERSATION STAGES ────────────────────────────────────
-const STAGES = {
-  GREETING:          'GREETING',
-  MAIN_MENU:         'MAIN_MENU',
-  FREE_TEXT_AI:      'FREE_TEXT_AI',
-  STUDY_DESTINATION: 'STUDY_DESTINATION',
-  STUDY_LEVEL:       'STUDY_LEVEL',
-  STUDY_TIMELINE:    'STUDY_TIMELINE',
-  VISA_TYPE:         'VISA_TYPE',
-  VISA_DESTINATION:  'VISA_DESTINATION',
-  TEST_EXAM_SELECT:  'TEST_EXAM_SELECT',
-  TEST_BATCH_SELECT: 'TEST_BATCH_SELECT',
-  LOAN_COUNTRY:      'LOAN_COUNTRY',
-  TRAVEL_TYPE:       'TRAVEL_TYPE',
-  PILGRIMAGE_TYPE:   'PILGRIMAGE_TYPE',
-  POF_ADVISORY:      'POF_ADVISORY',
-  CONSULT_NAME:      'CONSULT_NAME',
-  CONSULT_TIME:      'CONSULT_TIME',
-  CONSULT_CONFIRMED: 'CONSULT_CONFIRMED',
-  PAYMENT_INVOICE:   'PAYMENT_INVOICE',
-  PAYMENT_AWAITING:  'PAYMENT_AWAITING',
-  PAYMENT_CONFIRMED: 'PAYMENT_CONFIRMED',
-  ESCALATED:         'ESCALATED',
-};
-
-// ─── REDIS KEYS ──────────────────────────────────────────────
-const REDIS_KEYS = {
-  state:     (phone) => `state:${phone}`,
-  rateLimit: (phone) => `rl:${phone}`,
-  msgSeen:   (msgId) => `seen:${msgId}`,
-};
-
-// ─── TTLs (seconds) ──────────────────────────────────────────
-const TTL = {
-  STATE:      60 * 60 * 24, // 24 hours
-  RATE_LIMIT: 60,
-  MSG_DEDUP:  60,
-};
-
-// ─── RATE LIMITS ─────────────────────────────────────────────
-const RATE = {
-  MAX_MESSAGES_PER_MINUTE: 30,
-};
-
 // ─── SERVICE LABELS (CRM display) ────────────────────────────
 const SERVICE_LABELS = {
   study_abroad: 'Study Abroad',
@@ -360,19 +162,12 @@ const SERVICE_LABELS = {
 
 module.exports = {
   COMPANY,
-  BANK,
   REGISTRATION_FEE,
   CONVERSION_RATES,
   PRICES,
+  EXAM_AMOUNTS,
   STAFF_MEMBERS,
   STAFF_ROUTING,
-  COUNTRIES,
   LOAN_RULES,
-  MESSAGES,
-  BTN,
-  STAGES,
-  REDIS_KEYS,
-  TTL,
-  RATE,
   SERVICE_LABELS,
 };

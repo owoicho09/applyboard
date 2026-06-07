@@ -1,0 +1,52 @@
+We are building a completely new conversation flow for the ApplyBoard Africa bot. Before you touch any code read the full codebase, SYSTEM_MAP.md, and ARCHITECTURE_AUDIT.md. Understand everything that currently exists.
+
+Then read this carefully — this is the vision not a technical spec. You design the engineering.
+
+WHAT WE ARE BUILDING
+
+The bot needs to stop behaving like a form or an FAQ system. It should feel like a consultant giving a free consultation. The goal is to take a user from their first message to a pre-qualified profile and a ₦10,000 registration payment — all in one natural conversation.
+
+THE FLOW
+
+1. Entry — bot opens with one warm human question about why the user wants to make the move. No service menu. No welcome speech. Just one question that makes them feel understood.
+
+2. Discovery — through natural back and forth the bot learns their motivation, urgency, preferred destination, and whether they want to study, work, or relocate. The bot is smart enough to answer questions mid-conversation and come back to what it needs. Nothing is rigid.
+
+3. Profile collection — bot collects name, age, qualification level, current country, passport status, work experience, and budget range progressively over the conversation. Stored automatically to CRM as each piece is collected. User can type SKIP for anything they don't have. Nothing blocks the flow.
+
+4. Document collection — bot asks for documents one at a time naturally. Passport data page photo, degree certificate, transcript, CV. If the user has it they send it. If not they type skip. Bot acknowledges and moves forward. No checklist energy. Sounds like: "Send me your passport data page when you have it — just a photo is fine."
+
+5. Profile summary and approval — after collecting what it can the bot reads back a natural human summary of everything. Not a template output. Something like: "Okay so here's where you're at — masters in public health, Canada first choice but open to Germany, passport ready, transcript still pending, budget around ₦3M, want to move within 6 months. That's actually a workable profile." User confirms or corrects.
+
+6. Roadmap — based on confirmed profile bot gives one personalised insight about possible destinations, likely pathways, rough cost range. Informational only. Makes the user feel genuinely understood.
+
+7. Registration — now and only now the bot introduces the ₦10,000 registration. Natural, not pushy. Explains it connects them with a consultant who already has their full profile and schedules a strategy session.
+
+8. Payment and handover — payment confirmed. Calendly link sent. Consultant receives full pre-qualified brief automatically.
+
+IMPORTANT RULES
+
+The bot must remain natural and human throughout. Ade is a trusted consultant giving a free consultation — not a form collector. The conversation must never feel rigid or scripted. The bot answers questions at any point mid-flow and returns to the flow naturally.
+
+Everything happens in one session by design. The bot keeps moving forward with whatever the user provides. Skipped items are noted but never blocking.
+
+WHAT NEEDS TO BE BUILT
+
+1. New conversation stages for this flow — map out what stages are needed beyond what exists
+2. New CRM fields for motivation, urgency, documents checklist, profile completion score, lead score — Hot Warm Cold
+3. New lead profile view in the admin dashboard showing all collected data, document status with visual indicators, profile completion percentage, lead score tag, and a consultant brief section
+4. Lead scoring logic — Hot is ready within 30 days with passport and budget above ₦2M. Warm is interested with partial documents. Cold is exploring only.
+5. The profile summary and roadmap are AI-generated naturally from the collected data — not templates
+
+WHAT STAYS THE SAME
+
+The ₦10,000 registration is still the payment gateway. The existing payment flow, Paystack integration, and confirmation flow are untouched. The existing button flows, greeting, escalation, and all other flows remain as they are. Ade's personality and writing rules in the system prompt remain unchanged.
+
+After reading everything tell me:
+1. What new stages you need to add to the state machine
+2. What new database columns are needed in the leads table
+3. What the new admin profile view needs to show
+4. How you plan to keep the new flow natural without making it feel like a form
+5. What the safest way is to layer this on top of the existing architecture without breaking anything currently working
+
+Do not touch any file. Tell me your complete plan first.

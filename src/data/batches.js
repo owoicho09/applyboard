@@ -1,8 +1,11 @@
+const { PRICES } = require('../config/constants');
+
 const batches = {
   IELTS: {
     label:    'IELTS Plus (Intensive)',
     duration: '6 weeks',
     fee:      '₦85,000',
+    feeNaira: PRICES.testPrep.IELTS.naira,
     includes: 'Mock tests, score guarantee, study materials',
     schedules: [
       { id: 'BATCH_MORNING',   label: 'Morning',   time: 'Mon–Fri  7:00am – 9:00am'  },
@@ -16,6 +19,7 @@ const batches = {
     label:    'TOEFL Preparation',
     duration: '4 weeks',
     fee:      '₦75,000',
+    feeNaira: PRICES.testPrep.TOEFL.naira,
     includes: 'Practice tests, ETS materials, speaking drills',
     schedules: [
       { id: 'BATCH_MORNING', label: 'Morning', time: 'Mon–Fri  7:00am – 9:00am' },
@@ -26,6 +30,7 @@ const batches = {
     label:    'GRE Preparation',
     duration: '6 weeks',
     fee:      '₦90,000',
+    feeNaira: PRICES.testPrep.GRE.naira,
     includes: 'Quantitative, verbal, AWA coaching',
     schedules: [
       { id: 'BATCH_WEEKEND', label: 'Weekend', time: 'Sat–Sun  10:00am – 2:00pm' },
@@ -36,6 +41,7 @@ const batches = {
     label:    'GMAT Preparation',
     duration: '6 weeks',
     fee:      '₦95,000',
+    feeNaira: PRICES.testPrep.GMAT.naira,
     includes: 'Quant, verbal, IR, AWA — full coaching',
     schedules: [
       { id: 'BATCH_WEEKEND', label: 'Weekend', time: 'Sat–Sun  10:00am – 2:00pm' },
@@ -46,6 +52,7 @@ const batches = {
     label:    'SAT Preparation',
     duration: '8 weeks',
     fee:      '₦80,000',
+    feeNaira: PRICES.testPrep.SAT.naira,
     includes: 'Math, reading, writing — College Board aligned',
     schedules: [
       { id: 'BATCH_MORNING', label: 'Morning', time: 'Mon–Fri  7:00am – 9:00am'  },
@@ -56,6 +63,7 @@ const batches = {
     label:    'PTE Academic',
     duration: '4 weeks',
     fee:      '₦70,000',
+    feeNaira: PRICES.testPrep.PTE.naira,
     includes: 'Speaking, writing, reading, listening modules',
     schedules: [
       { id: 'BATCH_ONLINE', label: 'Online', time: 'Flexible — self-paced' },
@@ -65,6 +73,7 @@ const batches = {
     label:    'Duolingo English Test',
     duration: '2 weeks',
     fee:      '₦45,000',
+    feeNaira: PRICES.testPrep.DUOLINGO.naira,
     includes: 'Fast-track prep, accepted by 4,000+ institutions',
     schedules: [
       { id: 'BATCH_ONLINE', label: 'Online', time: 'Flexible — self-paced' },
@@ -74,6 +83,7 @@ const batches = {
     label:    'German Language (A1–B2)',
     duration: '12 weeks per level',
     fee:      '₦120,000 per level',
+    feeNaira: PRICES.testPrep.GERMAN.naira,
     includes: 'Speaking, writing, Goethe exam prep',
     schedules: [
       { id: 'BATCH_MORNING',   label: 'Morning',   time: 'Mon–Fri  7:00am – 9:00am'  },
@@ -85,6 +95,7 @@ const batches = {
     label:    'French Language (A1+)',
     duration: '10 weeks per level',
     fee:      '₦100,000 per level',
+    feeNaira: PRICES.testPrep.FRENCH.naira,
     includes: 'Speaking, writing, DELF exam prep',
     schedules: [
       { id: 'BATCH_WEEKEND', label: 'Weekend', time: 'Sat–Sun  9:00am – 1:00pm' },
@@ -95,6 +106,7 @@ const batches = {
     label:    'Japanese Language',
     duration: '12 weeks',
     fee:      '₦110,000',
+    feeNaira: PRICES.testPrep.JAPANESE.naira,
     includes: 'Hiragana, Katakana, basic Kanji, JLPT N5 prep',
     schedules: [
       { id: 'BATCH_WEEKEND', label: 'Weekend', time: 'Sat  10:00am – 2:00pm' },

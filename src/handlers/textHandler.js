@@ -1,6 +1,8 @@
 const { sendText, sendButtons } = require('../services/messenger');
 const { getState, setState, tryLock, releaseLock } = require('../utils/stateManager');
-const { STAGES, MESSAGES, COMPANY } = require('../config/constants');
+const { COMPANY, EXAM_AMOUNTS }   = require('../config/constants');
+const { STAGES }                  = require('../config/stages');
+const { MESSAGES }                = require('../config/messages');
 const { sanitizeText }          = require('../utils/validators');
 const { updateLead }            = require('../services/leadService');
 
@@ -40,20 +42,6 @@ const stripWhatsAppMarkdown = (text) => text
   .replace(/_([^_\n]+)_/g, '$1')    // _italic_
   .replace(/^#{1,6}\s+/gm, '')      // # headers at line start
   .replace(/^[*\-]\s+/gm, '');      // bullet starters (* or -)
-
-// Map exam keywords to amounts
-const EXAM_AMOUNTS = {
-  'ielts':    85000,
-  'toefl':    75000,
-  'gre':      90000,
-  'gmat':     95000,
-  'sat':      80000,
-  'pte':      70000,
-  'duolingo': 45000,
-  'german':   120000,
-  'french':   100000,
-  'japanese': 110000,
-};
 
 const getPaymentAmount = (state) => {
   const { REGISTRATION_FEE } = require('../config/constants');
@@ -253,7 +241,23 @@ When user clearly confirms they want to pay, OR right after answering a trust ob
     return;
   }
 
-  // ── 6. Escalated — hold the space until human arrives ─
+  // ── 6. Profile consultation stages ───────────────────
+  if (state.stage === STAGES.PROFILE_COLLECTING) {
+    const { handleProfileCollecting } = require('../flows/profileConsultation');
+    return handleProfileCollecting(from, clean, state);
+  }
+
+  if (state.stage === STAGES.PROFILE_SUMMARY) {
+    const { handleProfileSummary } = require('../flows/profileConsultation');
+    return handleProfileSummary(from, clean, state);
+  }
+
+  if (state.stage === STAGES.PROFILE_ROADMAP) {
+    const { handleProfileRoadmap } = require('../flows/profileConsultation');
+    return handleProfileRoadmap(from, clean, state);
+  }
+
+  // ── 7. Escalated — hold the space until human arrives ─
   if (state.stage === STAGES.ESCALATED) {
     const { askAI } = require('../services/ai');
     const aiReply   = await askAI(
@@ -263,7 +267,7 @@ When user clearly confirms they want to pay, OR right after answering a trust ob
     return sendText(from, aiReply);
   }
 
-  // ── 7. AI handles everything ──────────────────────────
+  // ── 8. AI handles everything ──────────────────────────
   const acquired = await tryLock(from);
   if (!acquired) {
     return; // previous message still processing — drop silently rather than sending a visible lockout message
@@ -271,9 +275,11 @@ When user clearly confirms they want to pay, OR right after answering a trust ob
   try {
     const { askAI } = require('../services/ai');
 
-    // Signal detection writes to DB/Redis — run it in parallel with the AI call
-    const [, aiReply] = await Promise.all([
+    // Signal detection writes to DB/Redis — run both extractors in parallel with the AI call
+    const { extractProfileSignals } = require('../utils/profileExtractor');
+    const [, , aiReply] = await Promise.all([
       detectAndSaveSignals(from, lower, state),
+      extractProfileSignals(from, clean, state),
       askAI(from, clean, state),
     ]);
 

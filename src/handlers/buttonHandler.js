@@ -7,17 +7,19 @@ const { handleLoan }        = require('../flows/loanScholarship');
 const { handleTravel }      = require('../flows/travelServices');
 const { handlePilgrimage }  = require('../flows/pilgrimage');
 const { handlePoF }         = require('../flows/proofOfFunds');
-const { startConsultation } = require('../flows/consultation');
+const { startConsultation }       = require('../flows/consultation');
+const { startProfileConsultation } = require('../flows/profileConsultation');
 const { handlePayment }     = require('../flows/payment');
 const { escalate }          = require('../flows/escalation');
-const { BTN, STAGES }       = require('../config/constants');
+const { STAGES }            = require('../config/stages');
+const { BTN }               = require('../config/buttons');
 
 // ── Master route map — every button ID mapped to its handler
 const ROUTE_MAP = {
   // Navigation
   [BTN.MENU_MAIN]:    (f, s) => sendMainMenu(f),
   [BTN.MENU_EXPLORE]: (f, s) => sendMainMenu(f),
-  [BTN.MENU_CONSULT]: (f, s) => startConsultation(f, s),
+  [BTN.MENU_CONSULT]: (f, s) => startProfileConsultation(f, s),
   [BTN.BACK]:         (f, s) => sendMainMenu(f),
 
   // Services — entry points
@@ -26,10 +28,10 @@ const ROUTE_MAP = {
   [BTN.SVC_LOAN]:    (f, s) => handleLoan(f, 'START', s),
   [BTN.SVC_TEST]:    (f, s) => handleTestPrep(f, 'START', s),
   [BTN.SVC_TRAVEL]:  (f, s) => handleTravel(f, 'START', s),
-  [BTN.SVC_INSURE]:  (f, s) => handleTravel(f, 'INSURANCE', s),
+  [BTN.SVC_INSURE]:  (f, s) => handleTravel(f, BTN.TV_INSURANCE, s),
   [BTN.SVC_HAJJ]:    (f, s) => handlePilgrimage(f, 'START', s),
   [BTN.SVC_POF]:     (f, s) => handlePoF(f, 'START', s),
-  [BTN.SVC_CONSULT]: (f, s) => startConsultation(f, s),
+  [BTN.SVC_CONSULT]: (f, s) => startProfileConsultation(f, s),
 
   // Study abroad destinations
   [BTN.SA_CANADA]:  (f, s) => handleStudyAbroad(f, BTN.SA_CANADA, s),
@@ -89,7 +91,6 @@ const ROUTE_MAP = {
 
   // Loans
   [BTN.LOAN_EUR]: (f, s) => handleLoan(f, BTN.LOAN_EUR, s),
-  [BTN.LOAN_UK]:  (f, s) => handleLoan(f, BTN.LOAN_UK, s),
   [BTN.LOAN_CA]:  (f, s) => handleLoan(f, BTN.LOAN_CA, s),
   [BTN.LOAN_SCH]: (f, s) => handleLoan(f, BTN.LOAN_SCH, s),
 
