@@ -2,7 +2,7 @@ const supabase = require('../config/database');
 
 const buildHistory = async (phone, state) => {
   const history = state.data?.chatHistory || [];
-  if (history.length > 0) return history.slice(-16);
+  if (history.length > 0) return history.slice(-10);
 
   // Redis expired — seed from Supabase conversations table so the AI isn't flying blind
   try {

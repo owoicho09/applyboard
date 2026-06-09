@@ -110,7 +110,7 @@ const saveToHistory = async (phone, state, userMsg, botReply) => {
     history.push({ role: 'user',      content: userMsg  });
     history.push({ role: 'assistant', content: botReply });
 
-    await setState(phone, currentStage, { chatHistory: history.slice(-16) });
+    await setState(phone, currentStage, { chatHistory: history.slice(-10) });
   } catch (err) {
     console.error('[STATE] saveToHistory error:', err.message);
   }

@@ -32,6 +32,9 @@ const buildMessages = async (phone, userMessage, state, systemNote) => {
   const fullContext       = (sessionContext + persistentContext).trim();
 
   const history = await buildHistory(phone, state);
+  const reAnchor = history.length >= 8
+    ? '\n[Long conversation — stay Ade: 2–3 sentences max, one question, plain text, never robotic]'
+    : '';
   const today   = new Date().toLocaleDateString('en-NG', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Africa/Lagos',
   });
@@ -42,8 +45,8 @@ const buildMessages = async (phone, userMessage, state, systemNote) => {
     : '[Platform: Telegram — markdown renders. Use *bold* sparingly where it feels natural.]';
 
   const baseContent = fullContext
-    ? `${userMessage}\n\n${fullContext}\nToday's date: ${today}\n${platformNote}`
-    : `${userMessage}\nToday's date: ${today}\n${platformNote}`;
+    ? `${userMessage}\n\n${fullContext}\nToday's date: ${today}\n${platformNote}${reAnchor}`
+    : `${userMessage}\nToday's date: ${today}\n${platformNote}${reAnchor}`;
 
   return [
     ...history,
