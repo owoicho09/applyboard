@@ -3,6 +3,7 @@ const { setState, updateData }            = require('../utils/stateManager');
 const { updateLead }                      = require('../services/leadService');
 const { STAGES }                          = require('../config/stages');
 const { BTN }                             = require('../config/buttons');
+const { stripWhatsAppMarkdown }           = require('../utils/validators');
 
 const VISA_TYPES = {
   [BTN.VT_STUDY]:    'Study Visa',
@@ -95,7 +96,8 @@ const handleVisa = async (from, action, state) => {
       { stage: STAGES.FREE_TEXT_AI, data: { ...state.data, destination, service: 'visa' } },
       `The user needs a ${visaType} for ${destination}. You know this — do NOT repeat it back. Give them one sharp, specific thing a Nigerian applicant needs to know about this visa right now: processing time, a common rejection reason, a document most people overlook, or a current policy update that affects them. Then naturally invite them to get their case moving with the ₦10,000 registration. Under 4 sentences. No bullet points. Sound like Ade.`
     );
-    return sendText(from, aiReply);
+    const clean = !from.startsWith('tg_') ? stripWhatsAppMarkdown(aiReply) : aiReply;
+    return sendText(from, clean);
   }
 };
 

@@ -2,6 +2,7 @@ const { sendText }               = require('../services/messenger');
 const { setState, updateData }   = require('../utils/stateManager');
 const { updateLead }             = require('../services/leadService');
 const { STAGES }                 = require('../config/stages');
+const { stripWhatsAppMarkdown }  = require('../utils/validators');
 
 const handleMedia = async (from, type, message, state) => {
   console.log(`[MEDIA] from=${from} type=${type}`);
@@ -33,7 +34,8 @@ const handleMedia = async (from, type, message, state) => {
       { ...state, data: { ...state.data, documents_checklist: updated } },
       `The user just sent their ${label} ${type === 'image' ? 'photo' : 'document'}. You cannot open or read it. Acknowledge warmly in one sentence — something like "Got your ${label}, noted." Then continue naturally with whatever comes next in the conversation. Do not ask for the same document again.`
     );
-    return sendText(from, aiReply);
+    const clean = !from.startsWith('tg_') ? stripWhatsAppMarkdown(aiReply) : aiReply;
+    return sendText(from, clean);
   }
 
   const typeLabel = {
@@ -52,7 +54,8 @@ const handleMedia = async (from, type, message, state) => {
     `The user sent ${typeLabel}. You cannot open or read it. Acknowledge this warmly and briefly — do not make them feel bad about it. Ask what they were trying to share or what question they have. Keep it light, one sentence max. Do not mention "menu" or any service list.`
   );
 
-  return sendText(from, aiReply);
+  const cleanReply = !from.startsWith('tg_') ? stripWhatsAppMarkdown(aiReply) : aiReply;
+  return sendText(from, cleanReply);
 };
 
 module.exports = { handleMedia };

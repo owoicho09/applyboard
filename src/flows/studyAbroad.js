@@ -3,6 +3,7 @@ const { setState, updateData }            = require('../utils/stateManager');
 const { updateLead }                      = require('../services/leadService');
 const { STAGES }                          = require('../config/stages');
 const { BTN }                             = require('../config/buttons');
+const { stripWhatsAppMarkdown }           = require('../utils/validators');
 
 const DESTINATIONS = {
   [BTN.SA_CANADA]:  'Canada',
@@ -108,7 +109,8 @@ const handleStudyAbroad = async (from, action, state) => {
       { stage: STAGES.FREE_TEXT_AI, data: { ...state.data, timeline, destination, program_level: level, service: 'study_abroad' } },
       `The user just selected their study profile via the menu: ${level} in ${destination}, timeline ${timeline}. You already have this — do NOT ask for any of it again. Now pick ONE sharp, specific angle that would genuinely surprise or excite a Nigerian student in this situation: a visa advantage, a post-study work right, a cost insight, a scholarship angle, or a common fear you can address. Then end with a soft move toward the ₦10,000 registration. Under 4 sentences. No bullet points. Sound exactly like Ade — warm, specific, direct.`
     );
-    return sendText(from, aiReply);
+    const clean = !from.startsWith('tg_') ? stripWhatsAppMarkdown(aiReply) : aiReply;
+    return sendText(from, clean);
   }
 };
 

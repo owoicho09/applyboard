@@ -3,7 +3,7 @@ const { getState, setState, tryLock, releaseLock } = require('../utils/stateMana
 const { COMPANY, EXAM_AMOUNTS }   = require('../config/constants');
 const { STAGES }                  = require('../config/stages');
 const { MESSAGES }                = require('../config/messages');
-const { sanitizeText }          = require('../utils/validators');
+const { sanitizeText, stripWhatsAppMarkdown } = require('../utils/validators');
 const { updateLead }            = require('../services/leadService');
 
 const HARD_TRIGGERS = {
@@ -14,7 +14,15 @@ const HARD_TRIGGERS = {
     'done paying', 'money sent', 'i have transferred', 'just paid now',
     'i transferred', 'payment made', 'i just paid',
   ],
-  agent: ['speak to agent', 'talk to human', 'real person', 'speak to someone', 'call me', 'i want to call'],
+  agent: [
+    'speak to agent', 'speak to a human', 'speak with a human', 'speak with agent',
+    'talk to human', 'talk with human', 'talk to a human', 'talk with a real human',
+    'talk to real human', 'talk with real human',
+    'real person', 'real human', 'actual person', 'live agent', 'human agent',
+    'speak to someone', 'connect me to someone', 'connect me with',
+    'want a human', 'need a human', 'want to speak to someone',
+    'call me', 'i want to call', 'human support',
+  ],
   // Catches any request for bank account details — response is hardcoded, never touches the AI
   bank:  [
     'account number', 'bank account', 'account details',
@@ -34,14 +42,6 @@ const matchesHard = (text, keywords) => {
   const normalised = normaliseText(text.toLowerCase());
   return keywords.some((kw) => normalised.includes(kw.toLowerCase()));
 };
-
-// Strip markdown formatting symbols from WhatsApp messages.
-// WhatsApp renders these as literal characters — the AI sometimes forgets the rule.
-const stripWhatsAppMarkdown = (text) => text
-  .replace(/\*([^*\n]+)\*/g, '$1')  // *bold*
-  .replace(/_([^_\n]+)_/g, '$1')    // _italic_
-  .replace(/^#{1,6}\s+/gm, '')      // # headers at line start
-  .replace(/^[*\-]\s+/gm, '');      // bullet starters (* or -)
 
 const checkThreshold = (data) => {
   const hasDirection = !!(data.destination_country || data.destination || data.service_interested);
@@ -98,11 +98,15 @@ Do not repeat the full pitch. Do not re-summarize. Do not ask again this session
   }
 
   // Mode: COLLECTING — still gathering information
+  // Show only the top 3 priority fields to prevent checklist behaviour
+  const PRIORITY = ['destination', 'service', 'program', 'motivation', 'budget', 'age', 'urgency', 'qualifications', 'passport', 'fears'];
+  const topNeeded = need.filter(f => PRIORITY.includes(f)).slice(0, 3);
+
   return `[AGENDA STATUS — internal only, do not narrate to the user]
 Collected: ${have.length ? have.join(' | ') : 'nothing yet'}
-Still needed: ${need.join(', ')}
+Priority next: ${topNeeded.length ? topNeeded.join(', ') : 'all key fields covered'}
 
-Work missing fields into the conversation naturally, one at a time, only when the moment fits. Never run through them as a checklist. Answer any question they ask first, then come back.`;
+Work the priority fields into the conversation at natural moments, one at a time. Never ask more than one question per message. Answer their question first, always. No checklists.`;
 };
 
 const getPaymentAmount = (state) => {
@@ -199,10 +203,11 @@ const handleText = async (from, text, state, message) => {
       const agendaNote   = buildAgendaNote(freshState.data || {});
 
       const { askAI } = require('../services/ai');
-      const aiReply   = await askAI(
+      let aiReply = await askAI(
         from, clean, freshState,
         `This user is returning after a gap — their session expired but they are a known contact. Their profile is already loaded in context. Do NOT re-introduce yourself or say "welcome". Pick up naturally — one warm sentence acknowledging you remember them, then one question that continues where you left off.\n\n${agendaNote}`
       );
+      if (!from.startsWith('tg_')) aiReply = stripWhatsAppMarkdown(aiReply);
       return sendText(from, aiReply);
     }
 
@@ -219,7 +224,8 @@ const handleText = async (from, text, state, message) => {
 
     const { askAI } = require('../services/ai');
     const greetingNote = `This is a brand new user — their very first message. Read exactly what they said and respond to it specifically — show you heard what they actually want. Then ask the one question that takes it one layer deeper into their situation. Two sentences maximum. No welcome speech. No list of services. No "how can I help you today".`;
-    const greeting = await askAI(from, clean, newState, greetingNote);
+    let greeting = await askAI(from, clean, newState, greetingNote);
+    if (!from.startsWith('tg_')) greeting = stripWhatsAppMarkdown(greeting);
     return sendText(from, greeting);
   }
 
@@ -234,7 +240,9 @@ const handleText = async (from, text, state, message) => {
       await clearState(from);
       await setState(from, STAGES.FREE_TEXT_AI, {});
       const { askAI } = require('../services/ai');
-      return sendText(from, await askAI(from, clean, { stage: STAGES.FREE_TEXT_AI, data: state.data }));
+      let aiReply = await askAI(from, clean, { stage: STAGES.FREE_TEXT_AI, data: state.data });
+      if (!from.startsWith('tg_')) aiReply = stripWhatsAppMarkdown(aiReply);
+      return sendText(from, aiReply);
     }
 
     // Only fire the link immediately for unambiguous "send me the link right now" signals.
@@ -288,7 +296,8 @@ When user clearly confirms they want to pay, OR right after answering a trust ob
     const aiNarratedLink   = !tagPresent && narrationPattern.test(aiReply);
 
     const shouldSendLink = tagPresent || aiNarratedLink;
-    const cleanReply     = aiReply.replace('[[SEND_PAYMENT_LINK]]', '').trim();
+    let cleanReply       = aiReply.replace('[[SEND_PAYMENT_LINK]]', '').trim();
+    if (!from.startsWith('tg_')) cleanReply = stripWhatsAppMarkdown(cleanReply);
 
     if (cleanReply) await sendText(from, cleanReply);
 
@@ -331,10 +340,11 @@ When user clearly confirms they want to pay, OR right after answering a trust ob
   // ── 7. Escalated — hold the space until human arrives ─
   if (state.stage === STAGES.ESCALATED) {
     const { askAI } = require('../services/ai');
-    const aiReply   = await askAI(
+    let aiReply = await askAI(
       from, clean, state,
       `This user previously asked to speak to a human and was flagged for escalation. A team member has been notified. Your job now: acknowledge warmly that someone is on their way, answer any question they ask in the meantime — but do NOT trigger [[SEND_PAYMENT_LINK]] and do NOT push for registration. Just hold the conversation warmly until the human takes over.`
     );
+    if (!from.startsWith('tg_')) aiReply = stripWhatsAppMarkdown(aiReply);
     return sendText(from, aiReply);
   }
 
@@ -531,6 +541,19 @@ const detectAndSaveSignals = async (from, lower, state) => {
       updates.service_interested = 'test_prep';
     }
 
+    // MRes / PhD — flag loan ineligibility immediately so the AI never promises a loan
+    const mresPhd = /\b(mres|m\.res|phd|ph\.d|doctorate|doctoral)\b/.test(lower);
+    if (mresPhd) {
+      const level = /\b(mres|m\.res)\b/.test(lower) ? 'MRes' : 'PhD';
+      if (!state.data?.program_level) updates.program_level = level;
+      const existingNotes = state.data?.notes || '';
+      if (!existingNotes.includes('loan ineligible')) {
+        updates.notes = existingNotes
+          ? `${existingNotes} | ${level} — NOT eligible for education loan`
+          : `${level} — NOT eligible for education loan`;
+      }
+    }
+
     // Detect and save exam type for correct amount calculation
     for (const exam of Object.keys(EXAM_AMOUNTS)) {
       if (lower.includes(exam)) {
@@ -548,7 +571,11 @@ const detectAndSaveSignals = async (from, lower, state) => {
         if (age >= 18 && age <= 60) {
           updates.age = age;
           if (age > 32) {
-            updates.notes = `Age ${age} — loan only eligible for Canada and USA`;
+            const ageNote = `Age ${age} — loan only eligible for Canada and USA`;
+            const prevNotes = updates.notes || state.data?.notes || '';
+            if (!prevNotes.includes('loan only eligible')) {
+              updates.notes = prevNotes ? `${prevNotes} | ${ageNote}` : ageNote;
+            }
           }
         }
       }

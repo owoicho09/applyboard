@@ -4,6 +4,7 @@ const { updateLead }            = require('../services/leadService');
 const { STAGES }                = require('../config/stages');
 const { BTN }                   = require('../config/buttons');
 const { formatLoanMessage }     = require('../data/loanPackages');
+const { stripWhatsAppMarkdown } = require('../utils/validators');
 
 const handleLoan = async (from, action, state) => {
 
@@ -45,7 +46,8 @@ const handleLoan = async (from, action, state) => {
       { stage: STAGES.FREE_TEXT_AI, data: { ...state.data, loan_region: 'Europe/UK', service: 'loan' } },
       `The user is interested in a Masters loan for Europe or UK. The loan details message was just sent above. Your job now: ask one natural qualifying question — either their age (loan has a 32+ age restriction), which country specifically, or what Masters program they are targeting. Keep it conversational and warm. One question only.`
     );
-    return sendText(from, aiReply);
+    const clean = !from.startsWith('tg_') ? stripWhatsAppMarkdown(aiReply) : aiReply;
+    return sendText(from, clean);
   }
 
   // ── Step 3: Canada loan ───────────────────────────────
@@ -64,7 +66,8 @@ const handleLoan = async (from, action, state) => {
       { stage: STAGES.FREE_TEXT_AI, data: { ...state.data, loan_region: 'Canada', service: 'loan' } },
       `The user is interested in the Canada study loan. The loan details message was just sent above. Ask one natural qualifying question — their age (important for eligibility since 32+ limits options), or what program they are targeting (undergrad or masters). One question, warm and direct.`
     );
-    return sendText(from, aiReply);
+    const clean = !from.startsWith('tg_') ? stripWhatsAppMarkdown(aiReply) : aiReply;
+    return sendText(from, clean);
   }
 
   // ── Step 4: Scholarships ──────────────────────────────
@@ -80,7 +83,8 @@ const handleLoan = async (from, action, state) => {
       { stage: STAGES.FREE_TEXT_AI, data: { ...state.data, loan_region: 'Scholarship', service: 'loan' } },
       `The user is interested in scholarships. Share one specific, surprising insight about how scholarships actually work for Nigerian students — either the 6–12 month deadline reality, merit vs need-based split, or the fact that partner schools offer 10–50% tuition reductions that most people miss. Then ask one qualifying question about their program or target country to help identify the best match. Under 4 sentences. No bullet points. Sound like Ade.`
     );
-    return sendText(from, aiReply);
+    const clean = !from.startsWith('tg_') ? stripWhatsAppMarkdown(aiReply) : aiReply;
+    return sendText(from, clean);
   }
 };
 

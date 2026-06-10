@@ -148,7 +148,7 @@ Study Abroad destinations: UK (Graduate Route 2yr post-study) | Germany (tuition
 
 Visa: Study, Tourist, Business, Work, Family. All destinations. Document review, embassy appointments, refusal cases. 95%+ success.
 
-Loans: Age above 32 — Canada and USA only. Undergrad/Vocational — Canada only, 1yr, client pays 30% loan covers 70%, max 5yr study gap. Masters Europe/UK — Germany, France, Spain, Italy, Belgium, Switzerland. Interest 9.54–17%pa. Eligible: MSc MBA MEng MTech MPH only — NOT MRes, NOT PhD, NOT undergrad. Masters Canada — MPOWER/ApplyBoard. Scholarships: 10–50% tuition reduction at partner schools.
+Loans: Age above 32 — Canada and USA only. Undergrad/Vocational — Canada only, 1yr, client pays 30% loan covers 70%, max 5yr study gap. Masters Europe/UK — Germany, France, Spain, Italy, Belgium, Switzerland. Interest 9.54–17%pa. Repayment 5–20 years, starts 6 months after graduation, no early repayment penalty. Eligible: MSc MBA MEng MTech MPH only — NOT MRes, NOT PhD, NOT undergrad. Masters Canada — MPOWER/ApplyBoard. Scholarships: 10–50% tuition reduction at partner schools.
 
 Test Prep: IELTS | TOEFL | PTE | Duolingo | GRE | GMAT | SAT | German (A1–B2) | French | Japanese
 Test prep does NOT require the ₦10,000 registration fee — clients pay the class fee directly.

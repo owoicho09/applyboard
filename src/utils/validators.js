@@ -50,6 +50,19 @@ const isEmpty = (val) => {
   return val === null || val === undefined || String(val).trim() === '';
 };
 
+/**
+ * Strip markdown formatting for WhatsApp — renders as literal characters there.
+ * Also collapses 3+ consecutive blank lines to a single break.
+ */
+const stripWhatsAppMarkdown = (text) => text
+  .replace(/\*\*([^*\n]+)\*\*/g, '$1')   // **bold**
+  .replace(/\*([^*\n]+)\*/g, '$1')        // *bold*
+  .replace(/_([^_\n]+)_/g, '$1')          // _italic_
+  .replace(/^#{1,6}\s+/gm, '')            // # headers at line start
+  .replace(/^[*\-]\s+/gm, '')             // bullet starters (* or -)
+  .replace(/\n{3,}/g, '\n\n')             // collapse excessive blank lines
+  .trim();
+
 module.exports = {
   isValidPhone,
   isValidEmail,
@@ -57,4 +70,5 @@ module.exports = {
   sanitizeName,
   isWithinLength,
   isEmpty,
+  stripWhatsAppMarkdown,
 };
