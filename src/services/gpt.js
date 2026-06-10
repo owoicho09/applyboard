@@ -6,7 +6,7 @@ const askGPT = async (messages, systemNote = '') => {
   const res    = await axios.post(
     'https://api.openai.com/v1/chat/completions',
     {
-      model:      'gpt-4o-mini',
+      model:      'gpt-4o',
       max_tokens: 800,
       messages:   [{ role: 'system', content: system }, ...messages],
     },

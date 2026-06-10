@@ -82,15 +82,19 @@ const buildAgendaNote = (data) => {
     return `[AGENDA STATUS — internal only, do not narrate to the user]
 Collected: ${have.join(' | ')}
 
-You have enough of a picture. If this message contains a question, answer it briefly first. Then read back what you heard in one natural sentence — specific to what this person actually shared. Something like: "Just to be clear — you're looking at [destination or service], [program or goal], [a key personal detail]. Is that right?" Stop there. Do NOT mention the ₦10,000 fee in this message. Wait for them to respond.`;
+You have enough of a picture. Answer any question in their message first if there is one. Then in one sentence read back what you actually heard from this specific person — not a template, their actual situation. Then ask: "There's a ₦10,000 registration that gets your case properly matched and moving — want me to sort that now?" Stop there. Do not explain more. If they confirm in this same message, include [[SEND_PAYMENT_LINK]] at the very end.`;
   }
 
-  // Mode: REGISTRATION — summary already sent, now introduce the next step
+  // Mode: REGISTRATION — summary already sent, user is responding to the ask
   if (thresholdMet && data.summaryShown) {
     return `[AGENDA STATUS — internal only, do not narrate to the user]
 Collected: ${have.join(' | ')}
 
-You already read back their profile. Now introduce the next step naturally. Something like: "Based on what you have shared, your profile goes directly to one of our specialists who already has your full picture. To get that moving there is a one-time ₦10,000 registration fee — this covers matching you with the right person, a full case review, and scheduling your strategy session with them. Want to go ahead?" Answer any follow-up questions they have. Only trigger [[SEND_PAYMENT_LINK]] when they explicitly confirm they want to pay — not when they ask about price, not when they say maybe. If they say not yet → "No problem at all. I will be here when you are ready." Do not ask again that session.`;
+The ₦10,000 ask was already made. The user is responding now.
+If they confirmed (yes, ok, okay, sure, proceed, go ahead, ready, let's go, i'm ready, do it, sorted) → include [[SEND_PAYMENT_LINK]] at the very end. Say nothing about the link. No explanation. One brief line max.
+If they asked a question → answer it in one sentence, then: "Ready to go ahead?" Include [[SEND_PAYMENT_LINK]] only when they next confirm.
+If they said no or not yet → "No stress, I'll be here when you're ready."
+Do not repeat the full pitch. Do not re-summarize. Do not ask again this session if they declined.`;
   }
 
   // Mode: COLLECTING — still gathering information
@@ -103,24 +107,16 @@ Work missing fields into the conversation naturally, one at a time, only when th
 
 const getPaymentAmount = (state) => {
   const { REGISTRATION_FEE } = require('../config/constants');
-
-  // Explicit exam field is the most reliable signal — always trust it first
-  const exam = (state.data?.exam || '').toLowerCase();
-  for (const [key, amount] of Object.entries(EXAM_AMOUNTS)) {
-    if (exam.includes(key)) return amount;
-  }
-
-  // If service_interested is set and is NOT test_prep, this is a registration payment.
-  // Do NOT scan chat history — a study abroad lead who mentioned IELTS in passing
-  // must be charged ₦10,000, not ₦85,000.
   const serviceInterested = (state.data?.service_interested || '').toLowerCase();
-  if (serviceInterested && serviceInterested !== 'test_prep') {
-    return REGISTRATION_FEE;
-  }
 
-  // For test_prep service with no explicit exam field, scan history as a fallback.
-  // This only runs when we genuinely don't know which exam the user wants.
+  // Only charge exam coaching price when the service is explicitly test prep.
+  // A study abroad or loan lead who mentioned IELTS in passing must still pay ₦10,000.
   if (serviceInterested === 'test_prep') {
+    const exam = (state.data?.exam || '').toLowerCase();
+    for (const [key, amount] of Object.entries(EXAM_AMOUNTS)) {
+      if (exam.includes(key)) return amount;
+    }
+    // test_prep but no exam field — scan history as last resort
     const history = state.data?.chatHistory || [];
     const allText = history.map(h => h.content || '').join(' ').toLowerCase();
     for (const [key, amount] of Object.entries(EXAM_AMOUNTS)) {
@@ -195,6 +191,8 @@ const handleText = async (from, text, state, message) => {
       if (lead.timeline)            restored.timeline           = lead.timeline;
       if (lead.loan_interest)       restored.loan_interest      = lead.loan_interest;
       if (lead.notes)               restored.notes              = lead.notes;
+      // If they had a pending payment, mark summaryShown so the loop doesn't restart
+      if (lead.payment_status === 'pending') restored.summaryShown = true;
 
       await setState(from, STAGES.FREE_TEXT_AI, restored);
       const freshState   = await getState(from);
@@ -245,6 +243,9 @@ const handleText = async (from, text, state, message) => {
       'send the link', 'send link', 'send it now', 'i want to pay now',
       'i am ready to pay', "i'm ready to pay", 'ready to pay now',
       'pay now', 'generate link', 'payment link please', 'gimme the link',
+      'let proceed', "let's proceed", 'lets proceed', 'proceed with payment',
+      'i want to go ahead', 'go ahead and pay', 'yes i want to pay',
+      'i am ready to proceed', "i'm ready to proceed", 'process it',
     ];
     const wantsLinkNow = SEND_LINK_NOW.some(kw => lower.includes(kw));
 
@@ -353,6 +354,33 @@ When user clearly confirms they want to pay, OR right after answering a trust ob
     ]);
     const freshState = await getState(from);
     const freshData  = freshState.data || {};
+
+    // Hard bypass — when threshold is met and the ask was already made,
+    // a simple affirmative goes straight to payment without touching the AI.
+    // Prevents the "Yes → re-pitch → Yes → re-pitch" loop entirely.
+    if (checkThreshold(freshData) && freshData.summaryShown && freshData.payment_status !== 'paid') {
+      const AFFIRM = [
+        'yes', 'yep', 'yh', 'yeah', 'ok', 'okay', 'k', 'sure', 'proceed',
+        'go ahead', "let's go", 'lets go', 'let proceed', "let's proceed",
+        'lets proceed', 'do it', 'ready', "i'm ready", 'i am ready',
+        'go on', 'confirmed', 'sorted', 'send it', 'i want to go ahead',
+        'yes please', 'definitely', 'yes i want', 'i want to proceed',
+        'i would like to proceed', 'i am ready to proceed', "i'm ready to proceed",
+      ];
+      const isAffirmative = AFFIRM.some(a => lower.trim() === a || lower.trim() === a + '.' || lower.trim() === a + '!');
+      if (isAffirmative && !freshData.payment_url) {
+        try {
+          const { handlePayment } = require('../flows/payment');
+          const { updateData }    = require('../utils/stateManager');
+          await updateData(from, { payment_amount: getPaymentAmount(freshState) });
+          const payState = await getState(from);
+          return await handlePayment(from, 'REGISTRATION', payState);
+        } finally {
+          await releaseLock(from);
+        }
+      }
+    }
+
     const agendaNote = buildAgendaNote(freshData);
     const wasSummaryTurn = checkThreshold(freshData) && !freshData.summaryShown;
     const aiReply    = await askAI(from, clean, freshState, agendaNote);
